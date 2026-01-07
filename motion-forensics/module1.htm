@@ -231,7 +231,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-const functions = getFunctions();
 const getTable = httpsCallable(functions, 'get_metabolic_table');
 
 // 2. Get the data (Add this inside your start logic)
