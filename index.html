@@ -1,198 +1,241 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ROMetrics — Forensics Labs</title>
+<title>ROMetrics — Landing</title>
 
 <style>
-:root{
-  --bg:#07101b;
-  --card:#0f172a;
-  --border:rgba(148,163,184,.25);
-  --accent:#38bdf8;
-  --text:#e6eef7;
-  --muted:#9fb3cc;
-}
+/* ================= RESET ================= */
+*{ box-sizing:border-box }
 
-*{box-sizing:border-box}
 html,body{
   margin:0;
-  height:100%;
-  background:
-    radial-gradient(900px 600px at 50% 20%, rgba(56,189,248,.08), var(--bg));
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
-  color:var(--text);
+  padding:0;
+  font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:#f1f5f9; /* Bright Slate Background */
+  color:#1e293b;      /* Dark Slate Text */
 }
 
-main{
-  min-height:100%;
+/* ================= FRAME ================= */
+.frame{
+  position:relative;
+  min-height:100svh;
+}
+
+/* ================= HERO IMAGE ================= */
+.hero{
+  width:100%;
+  height:100svh;
+  object-fit:cover;
+  display:block;
+  opacity: 0.85; /* Soften the backdrop image */
+}
+
+@media (max-width:768px){
+  .hero{
+    object-fit:contain;
+    background:#f1f5f9;
+  }
+}
+
+/* ================= OVERLAY ================= */
+.overlay{
+  position:absolute;
+  inset:0;
+  display:grid;
+  grid-template-rows:auto 1fr auto; /* TOP | SPACE | BOTTOM */
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255, 0.4),
+      rgba(255,255,255, 0.1) 40%,
+      rgba(255,255,255, 0.3)
+    );
+}
+
+/* ================= BRAND ================= */
+.brand{
+  margin:10px auto 0;
+  padding:6px 14px;
+  border-radius:10px;
+  font-weight:800;
+  background:rgba(255,255,255, 0.85); /* Brightened container */
+  border:1px solid rgba(0,0,0, 0.1);
+  color:#0f172a;
+  width:max-content;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* ================= HERO COPY (TOP-LOCKED) ================= */
+.copy{
+  padding:24px;
+  max-width:760px;
+}
+
+.brand-row{
   display:flex;
   align-items:center;
-  justify-content:center;
-  padding:28px;
+  gap:10px;
+  margin-bottom:16px;
 }
 
-.card{
-  width:min(1000px,100%);
-  background:rgba(9,20,37,.78);
-  border:1px solid var(--border);
-  border-radius:28px;
-  box-shadow:0 30px 90px rgba(0,0,0,.45);
-  padding:26px;
+.brand-row img{
+  height:54px;
 }
 
-.header{
-  margin-bottom:22px;
+.kicker{
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  background:rgba(255,255,255, 0.9);
+  color:#475569;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.title{
-  font-size:26px;
+/* ================= HEADLINE ================= */
+h1{
+  margin:0 0 12px 0;
+  font-size:clamp(30px,5vw,48px);
   font-weight:900;
-  letter-spacing:.3px;
+  color: #0f172a;
 }
 
-.subtitle{
-  margin-top:6px;
-  color:var(--muted);
-  font-size:14px;
+h1 span{
+  background:linear-gradient(135deg,#2563eb,#0891b2); /* Darker Blue/Cyan for light bg */
+  -webkit-background-clip:text;
+  color:transparent;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+/* ================= SUBTEXT ================= */
+.sub{
+  background:rgba(255,255,255, 0.7); /* Glass effect */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding:12px 14px;
+  border-radius:12px;
+  max-width:64ch;
+  font-size:clamp(15px,2.6vw,18px);
+  color:#334155;
+  border: 1px solid rgba(255,255,255, 0.5);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+/* ================= MODULE STRIP ================= */
+.strip{
+  padding:20px 0 calc(36px + env(safe-area-inset-bottom));
+}
+
+/* ================= CAROUSEL ================= */
+.bubbles{
+  display:flex;
   gap:16px;
+  padding:0 16px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
 }
 
-.module{
-  background:linear-gradient(180deg, rgba(15,23,42,.9), rgba(8,16,28,.9));
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:22px;
-  cursor:pointer;
-  transition:
-    transform .18s ease,
-    box-shadow .18s ease,
-    border-color .18s ease;
+.bubbles::-webkit-scrollbar{ display:none }
+
+/* ================= CARDS ================= */
+.bubble{
+  flex:0 0 70%;
+  max-width:70%;
+  border-radius:18px;
+  padding:16px 18px;
+  scroll-snap-align:center;
+  text-decoration:none;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
 }
 
-.module:hover{
-  transform:translateY(-4px);
-  border-color:rgba(56,189,248,.55);
-  box-shadow:0 18px 40px rgba(0,0,0,.35);
-}
+.bubble:active { transform: scale(0.98); }
 
-.mod-num{
-  font-size:38px;
-  font-weight:900;
-  color:var(--accent);
-}
+.b-title{ font-weight:800; font-size: 16px; }
+.b-sub{ opacity:.9; font-size: 13px; }
 
-.mod-title{
-  margin-top:6px;
-  font-size:15px;
-  font-weight:800;
-}
+/* ================= COLORS ================= */
+.bubble:nth-child(1){ background:linear-gradient(135deg,#f59e0b,#f97316); }
+.bubble:nth-child(2){ background:linear-gradient(135deg,#6366f1,#4f46e5); }
+.bubble:nth-child(3){ background:linear-gradient(135deg,#0ea5e9,#0284c7); }
+.bubble:nth-child(4){ background:linear-gradient(135deg,#10b981,#059669); }
+.bubble:nth-child(5){ background:linear-gradient(135deg,#ec4899,#db2777); }
 
-.mod-desc{
-  margin-top:6px;
-  font-size:13px;
-  color:var(--muted);
-  line-height:1.25;
-}
-
-.footer{
-  margin-top:18px;
-  font-size:12px;
-  color:#8aa2bf;
+/* ================= DESKTOP ================= */
+@media (min-width:901px){
+  .bubbles{
+    max-width:1200px;
+    margin:auto;
+    overflow:visible;
+  }
+  .bubble{
+    flex:1;
+    max-width:none;
+  }
 }
 </style>
 </head>
 
 <body>
-<main>
-  <div class="card">
+<div class="frame">
+  <img class="hero" src="./assets/backdrop2.png" alt="ROMetrics backdrop">
 
-    <div class="header">
-      <div class="title">Forensics Labs</div>
-      <div class="subtitle">Select a module to begin</div>
-    </div>
+  <div class="overlay">
+    <div class="brand">ROMetrics</div>
 
-    <div class="grid">
-      
-<div class="module" onclick="window.location.href='forensics/module1.html'">
-  <div class="mod-num">01</div>
-  <div class="mod-title">Energy Systems🔓</div>
-</div>
-
-<div class="module" onclick="window.location.href='forensics/module2.html'">
-  <div class="mod-num">02</div>
-  <div class="mod-title">Stability & COM🔓</div>
-</div>
-
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-3-repeated-effort-performance/">
-        <div class="mod-num">03</div>
-        <div class="mod-title">Repeated Effort🔒</div>
-        <div class="mod-desc">Performance consistency and fatigue resistance.</div>
+    <section class="copy">
+      <div class="brand-row">
+        <img src="./assets/rometrics-logo.png" alt="">
+        <span class="kicker">Clinical Skills Workspace</span>
       </div>
 
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-4-acute-exercise-responses-warm-up-effects/">
-        <div class="mod-num">04</div>
-        <div class="mod-title">Acute Responses🔒</div>
-        <div class="mod-desc">Warm-up effects and immediate exercise signals.</div>
+      <h1>
+        <span>Assess</span>, <span>Measure</span>, <span>Train</span>
+      </h1>
+
+      <p class="sub">
+        ROMetrics is your all-in-one clinical toolkit —
+        goniometry, MMT, motion labs, and case simulations.
+      </p>
+    </section>
+
+    <nav class="strip">
+      <div class="bubbles">
+        <a class="bubble" href="./goniometry-trainer/">
+          <div class="b-title">Goniometry Trainer</div>
+          <div class="b-sub">Interactive ROM trainer</div>
+        </a>
+
+        <a class="bubble" href="./lab-motion/">
+          <div class="b-title">Motions Lab</div>
+          <div class="b-sub">Kinematics sandbox</div>
+        </a>
+
+        <a class="bubble" href="./mmt/">
+          <div class="b-title">Manual Muscle Test</div>
+          <div class="b-sub">MMT positions & cues</div>
+        </a>
+
+        <a class="bubble" href="./motion-forensics/">
+          <div class="b-title">Motion Forensics</div>
+          <div class="b-sub">Measure, infer, correct</div>
+        </a>
+
+        <a class="bubble" href="./simulated-evaluations/">
+          <div class="b-title">Simulated Evaluations</div>
+          <div class="b-sub">Digital assessment</div>
+        </a>
       </div>
-
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-5-mechanical-leverage-movement-demand/">
-        <div class="mod-num">05</div>
-        <div class="mod-title">Mechanical Leverage🔒</div>
-        <div class="mod-desc">Moment arms and movement torque demands.</div>
-      </div>
-
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-6-agonist-vs-antagonist-interaction/">
-        <div class="mod-num">06</div>
-        <div class="mod-title">Muscle Interaction🔒</div>
-        <div class="mod-desc">Agonist and antagonist force relationships.</div>
-      </div>
-
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-7-stabilizers-vs-prime-movers/">
-        <div class="mod-num">07</div>
-        <div class="mod-title">Stabilizers & Movers🔒</div>
-        <div class="mod-desc">Proximal stability vs. distal mobility.</div>
-      </div>
-
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-8-limb-dominance-task-demands/">
-        <div class="mod-num">08</div>
-        <div class="mod-title">Limb Dominance🔒</div>
-        <div class="mod-desc">Asymmetry and task-specific loading demands.</div>
-      </div>
-
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-9-neuromuscular-control/">
-        <div class="mod-num">09</div>
-        <div class="mod-title">Neuromuscular Control🔒</div>
-        <div class="mod-desc">Neural drive, rate coding, and motor recruitment.</div>
-      </div>
-
-      <div class="module" data-href="/ROMetrics.com/motion-forensics/module-10-performance-architect-capstone/">
-        <div class="mod-num">10</div>
-        <div class="mod-title">Capstone Project🔒</div>
-        <div class="mod-desc">Final integration of performance diagnostics.</div>
-      </div>
-
-    </div>
-
-    <div class="footer">
-      ROMetrics • Forensics Training Platform
-    </div>
-
+    </nav>
   </div>
-</main>
-
-<script>
-document.querySelectorAll('.module').forEach(card=>{
-  card.addEventListener('click', ()=>{
-    window.location.href = card.dataset.href;
-  });
-});
-</script>
+</div>
 </body>
 </html>
