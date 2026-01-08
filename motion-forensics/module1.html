@@ -2005,7 +2005,6 @@ if (runAction) runAction.paused = false;
         trialTime = Math.max(0, trialTime - dt);
         document.getElementById('trialTime').textContent = Math.ceil(trialTime);
     }
-}
 
 // --- DYNAMIC TRIAL STOP & UNLOCK LOGIC ---
 if (sim.energy <= 0 || trialTime <= 0 || sim.lactate >= 100) {
