@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+<title>ROMetrics | Clinical Motion</title>
+
+<style>
+:root{
+  --primary-glow:#7c3aed;
+  --secondary-glow:#06b6d4;
+  --accent-glow:#ec4899;
+  --dark-bg:#030712;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+body{
+  margin:0;
+  height:100vh;
+  background:var(--dark-bg);
+  color:#fff;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+/* ===== MINI FORENSICS ROOM INSET ===== */
+.mini-room{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:110px;
+  height:70px;
+  border-radius:4px;
+  background:#020617;
+  border:1px solid rgba(125,211,252,.6);
+  box-shadow:
+    inset 0 0 20px rgba(0,0,0,.8),
+    0 0 12px rgba(56,189,248,.45);
+  overflow:hidden;
+}
+
+#miniForensics{
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+/* ================= BACKGROUND ================= */
+.nebula{
+  position:fixed;
+  inset:0;
+  z-index:1;
+  background:radial-gradient(circle at 50% -20%, #1e1b4b, transparent);
+}
+.cloud{
+  position:absolute;border-radius:50%;
+  filter:blur(90px);opacity:.45;
+  animation:drift 28s infinite alternate ease-in-out;
+}
+.c1{width:520px;height:520px;background:var(--primary-glow);bottom:-15%;left:-15%}
+.c2{width:420px;height:420px;background:var(--secondary-glow);top:8%;right:-10%;animation-delay:-6s}
+.c3{width:340px;height:340px;background:var(--accent-glow);bottom:22%;right:14%;animation-delay:-12s}
+@keyframes drift{to{transform:translate(70px,40px) scale(1.1)}}
+
+/* ================= HEADER / BRAND ================= */
+#header{
+  position:relative;
+  z-index:20;
+  padding:18px 24px 0;
+  display:flex;
+  justify-content:center;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:900;
+  letter-spacing:-.03em;
+  font-size:1.25rem;
+}
+.logo-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:linear-gradient(135deg,var(--secondary-glow),var(--primary-glow));
+  box-shadow:0 0 12px var(--secondary-glow);
+}
+
+/* ================= HERO ================= */
+#hero{
+  position:relative;
+  z-index:10;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:24px;
+}
+.badge{
+  padding:6px 18px;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#c4b5fd;
+  border:1px solid rgba(124,58,237,.35);
+  background:rgba(124,58,237,.15);
+  margin-bottom:22px;
+}
+h1{
+  font-size:clamp(2.6rem,7vw,3.6rem);
+  font-weight:900;
+  letter-spacing:-.04em;
+  margin:0;
+}
+p{
+  margin-top:16px;
+  color:#9ca3af;
+  max-width:420px;
+  font-size:1.05rem;
+  line-height:1.5;
+}
+
+/* ================= HUD WALL ================= */
+#wall-zone{
+  position:fixed;
+  top:84px;
+  right:28px;
+  z-index:18;
+  pointer-events:none;
+}
+.rometrics-wall{
+  width:360px;
+  height:140px;
+  padding:14px 16px;
+  border-radius:8px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0)),
+    #1b3445;
+  border:2px solid #7dd3fc;
+  box-shadow:
+    0 0 0 4px rgba(125,211,252,.2),
+    0 0 55px rgba(56,189,248,.55),
+    inset 0 0 40px rgba(0,0,0,.65);
+  color:#e6f7ff;
+  font-size:.8rem;
+  position:relative;
+  overflow:hidden;
+}
+
+/* animated sweep */
+.rometrics-wall::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(120deg,transparent 40%,rgba(125,211,252,.18),transparent 60%);
+  animation:sweep 5s infinite linear;
+}
+@keyframes sweep{
+  from{transform:translateX(-120%)}
+  to{transform:translateX(120%)}
+}
+
+
+
+/* wall text */
+.wall-title{font-weight:900;font-size:.85rem}
+.wall-sub{margin-top:2px;font-size:.7rem;color:#9ddcff}
+.wall-body{margin-top:10px;letter-spacing:.05em}
+.wall-line{margin-top:4px}
+.wall-line.dim{opacity:.6}
+.wall-line.live{
+  color:#7dd3fc;
+  animation:pulse 1.4s infinite ease-in-out;
+}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* ================= DOCK ================= */
+#nav{
+  position:relative;
+  z-index:20;
+  padding:0 16px 42px;
+  display:flex;
+  justify-content:center;
+}
+#dock{
+  display:flex;
+  gap:8px;
+  padding:10px;
+  border-radius:999px;
+  background:rgba(15,23,42,.65);
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(20px);
+}
+.item{
+  padding:10px 14px;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:800;
+  color:#67e8f9;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+}
+</style>
+</head>
+
+<body>
+
+<div class="nebula">
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+</div>
+
+<!-- BRAND -->
+<header id="header">
+  <div class="brand">
+    <div class="logo-dot"></div>
+    ROMetrics
+  </div>
+</header>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="badge">Clinical Motion Platform</div>
+  <h1>Measure. Train.<br>Understand.</h1>
+  <p>Precision biomechanics for clinicians and researchers.</p>
+</div>
+
+<!-- HUD WALL -->
+<section id="wall-zone">
+  <div class="rometrics-wall">
+    <div class="wall-title">SUBJECT: Roma</div>
+    <div class="wall-sub">SESSION: Trial</div>
+    <div class="wall-body">
+<!-- MINI FORENSICS ROOM VIEW -->
+<div class="mini-room">
+  <canvas id="miniForensics"></canvas>
+</div>
+
+      <div class="wall-line live" id="liveLine">WAITING FOR SESSION START</div>
+      <div class="wall-line dim">Sensors initializing</div>
+    </div>
+  </div>
+</section>
+
+<!-- DOCK -->
+<nav id="nav">
+  <div id="dock">
+    <div class="item">Goniometry</div>
+    <div class="item">MMT</div>
+    <div class="item">Motion</div>
+    <div class="item">Forensics</div>
+    <div class="item">Cases</div>
+  </div>
+</nav>
+
+<script>
+const liveLine=document.getElementById('liveLine');
+let dots=0;
+setInterval(()=>{
+  dots=(dots+1)%4;
+  liveLine.textContent='WAITING FOR SESSION START'+'.'.repeat(dots);
+},500);
+</script>
+
+</body>
+</html>
