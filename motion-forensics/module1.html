@@ -1597,6 +1597,8 @@ const restore = () => {
         for (const [b, q] of R.rig.base) b.quaternion.copy(q);
     }
 };
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
 function animate() {
   renderer.setAnimationLoop(() => {});
 
