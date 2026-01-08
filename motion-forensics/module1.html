@@ -234,6 +234,21 @@ const sim = {
   fuelSuccess: false   // New: Flag for correct timing feedback
 };
 
+/**
+ * GLOBAL RESTORE FUNCTION
+ * Resets the avatar bones to their original quaternions
+ */
+function restore() {
+    if (animate._run && animate._run.rig) {
+        const rig = animate._run.rig;
+        // Loop through the stored base quaternions and apply them back to bones
+        for (const [bone, baseQ] of rig.base) {
+            bone.quaternion.copy(baseQ);
+        }
+    }
+}
+  
+
 // PLACE THE EXPOSURE LINES HERE (Outside the braces)
 window.sim = sim; 
 window.getTrialTime = () => trialTime; // Use a function to get the current value
