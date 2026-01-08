@@ -1598,6 +1598,8 @@ const restore = () => {
     }
 };
 function animate() {
+  renderer.setAnimationLoop(() => {});
+
     requestAnimationFrame(animate);
 
     const now = clock.getElapsedTime();
@@ -2107,7 +2109,7 @@ aBtn.onclick = () => {
         }
     }
 }
-animate();
+renderer.setAnimationLoop(animate);
 
 // 9) Enter Studio (gate -> studio)
 $enter.addEventListener('click', async () => {
