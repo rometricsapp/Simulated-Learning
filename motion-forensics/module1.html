@@ -1614,8 +1614,10 @@ window.controls.dampingFactor = 0.15; // Increased for better feel
 window.controls.rotateSpeed = 2.5;    // Fixed: Increased swipe speed
 window.controls.maxPolarAngle = Math.PI * 0.49;
 
-/* ==========================================================
-   2. CORRECTED ANIMATE FUNCTION
+
+
+  /* ==========================================================
+   2. CORRECTED ANIMATE FUNCTION & ENGINE
    ========================================================== */
 const clock = new THREE.Clock();
 
@@ -1626,13 +1628,13 @@ function animate() {
     const dt = clock.getDelta();
 
     // 2. Update 3D Controls First
-    controls.update();
+    if (window.controls) window.controls.update();
 
     // 3. Movement Logic (The Animation Engine)
     const runNow = !!(sim.running && sim.energy > 0);
 
     if (runNow) {
-        // This is the missing line that makes the legs move:
+        // This makes the legs move if using GLB clips:
         if (mixer) mixer.update(dt); 
         
         if (runAction) {
@@ -1650,593 +1652,200 @@ function animate() {
         const beltSpeed = 0.10 + (sim.speedMph / 12) * 1.10;
         beltTex.offset.y = (beltTex.offset.y + dt * beltSpeed) % 1;
 
+        // Treadmill strips movement
+        if (typeof treadStrips !== 'undefined') {
+            const treadSpeed = 0.35 + (sim.speedMph / 12) * 2.0;
+            for (const s of treadStrips) {
+                s.position.z += dt * treadSpeed;
+                if (s.position.z > TREAD_MAX_Z) s.position.z = TREAD_MIN_Z;
+            }
+        }
+
     } else {
         // Stop movement and reset to pose
         if (runAction) runAction.paused = true;
         if (typeof restore === "function") restore();
     }
 
-    // 4. Update HUD and Interactive Screens
-    updateHUD();
-    drawPanel(wallScreen, 'CARDIO BOARD');
-    drawTreadmillMph(consoleScreen);
+    // ===== BLINK LOGIC =====
+    if (!animate._blink) animate._blink = { model:null, targets:[], state:0, t:0, next:0 };
+    const BL = animate._blink;
 
-    // 5. Final Render
-    renderer.render(scene, camera);
-}
+    if (avatarRoot && BL.model !== avatarRoot) {
+        BL.model = avatarRoot;
+        BL.targets = [];
+        BL.state = 0;
+        BL.t = 0;
+        BL.next = performance.now()/1000 + 1.5;
 
-// Start the loop
-animate();
-// ===== BLINK (works for BOTH Roma + Roman via auto-detect morph names) =====
-if (!animate._blink) animate._blink = { model:null, targets:[], state:0, t:0, next:0 };
+        const addTarget = (mesh, name) => {
+            const d = mesh.morphTargetDictionary;
+            if (!d || d[name] == null) return false;
+            BL.targets.push({ mesh, idx: d[name] });
+            return true;
+        };
 
-const BL = animate._blink;
-
-// (re)build targets when model changes
-if (avatarRoot && BL.model !== avatarRoot){
-  BL.model = avatarRoot;
-  BL.targets = [];
-  BL.state = 0;
-  BL.t = 0;
-  BL.next = performance.now()/1000 + 1.5;
-
-  // Find morph targets on any mesh that has them
-  const addTarget = (mesh, name)=>{
-    const d = mesh.morphTargetDictionary;
-    if (!d || d[name] == null) return false;
-    BL.targets.push({ mesh, idx: d[name] });
-    return true;
-  };
-
-  // Prefer Roman blink morphs if present, else Roma eyeClosed morphs
-  let foundRoman = false;
-  let foundRoma  = false;
-
-  avatarRoot.traverse(o=>{
-    if (!o.isMesh || !o.morphTargetInfluences || !o.morphTargetDictionary) return;
-
-    // Roman
-    foundRoman = addTarget(o, "Eye_Blink")   || foundRoman;
-    foundRoman = addTarget(o, "Eye_Blink_L") || foundRoman;
-    foundRoman = addTarget(o, "Eye_Blink_R") || foundRoman;
-
-    // Roma
-    foundRoma  = addTarget(o, "Expressions_eyeClosedL_max") || foundRoma;
-    foundRoma  = addTarget(o, "Expressions_eyeClosedR_max") || foundRoma;
-  });
-
-  // If Roman + Roma both got added somehow, keep the one that actually matches this model:
-  // (simple rule: if any Eye_Blink exists on this model, keep only Roman targets)
-  const hasEyeBlink = BL.targets.some(t=>{
-    const dict = t.mesh.morphTargetDictionary;
-    return dict && (dict["Eye_Blink"] != null || dict["Eye_Blink_L"] != null || dict["Eye_Blink_R"] != null);
-  });
-  if (hasEyeBlink){
-    BL.targets = BL.targets.filter(t=>{
-      const dict = t.mesh.morphTargetDictionary;
-      return dict && (dict["Eye_Blink"] != null || dict["Eye_Blink_L"] != null || dict["Eye_Blink_R"] != null);
-    });
-  } else {
-    BL.targets = BL.targets.filter(t=>{
-      const dict = t.mesh.morphTargetDictionary;
-      return dict && (dict["Expressions_eyeClosedL_max"] != null || dict["Expressions_eyeClosedR_max"] != null);
-    });
-  }
-}
-
-// drive blink
-if (BL.targets.length){
-  const now = performance.now()/1000;
-
-  // schedule next blink (about every ~5s with slight randomness)
-  if (BL.state === 0 && now >= BL.next){
-    BL.state = 1;        // closing
-    BL.t = 0;
-    BL.next = now + 4.2 + Math.random()*1.6;
-  }
-
-  // timings
-  const down = 0.06;     // close
-  const hold = 0.02;     // closed
-  const up   = 0.10;     // open
-
-  const setBlink = (v)=>{
-    for (const t of BL.targets){
-      t.mesh.morphTargetInfluences[t.idx] = v;
+        avatarRoot.traverse(o => {
+            if (!o.isMesh || !o.morphTargetInfluences || !o.morphTargetDictionary) return;
+            addTarget(o, "Eye_Blink") || addTarget(o, "Eye_Blink_L") || addTarget(o, "Eye_Blink_R") ||
+            addTarget(o, "Expressions_eyeClosedL_max") || addTarget(o, "Expressions_eyeClosedR_max");
+        });
     }
-  };
 
-  if (BL.state !== 0){
-    BL.t += dt;
-
-    if (BL.state === 1){ // closing
-      const v = Math.min(1, BL.t / down);
-      setBlink(v);
-      if (BL.t >= down){ BL.state = 2; BL.t = 0; }
-    } else if (BL.state === 2){ // hold
-      setBlink(1);
-      if (BL.t >= hold){ BL.state = 3; BL.t = 0; }
-    } else if (BL.state === 3){ // opening
-      const v = 1 - Math.min(1, BL.t / up);
-      setBlink(v);
-      if (BL.t >= up){ BL.state = 0; BL.t = 0; setBlink(0); }
-    }
-  }
-}
-
-
-  // --- Procedural run-in-place (NO GLB animation clips required) ---
-  if (!animate._run){
-    animate._run = {
-      rig: null,
-      phase: 0,
-      wasRunning: false,
-      tmpQ: new THREE.Quaternion(),
-      tmpE: new THREE.Euler(),
-    };
-
-    animate._getSkeleton = (root)=>{
-      let sk = null;
-      root.traverse(o=>{
-        if (sk) return;
-        if (o.isSkinnedMesh && o.skeleton) sk = o.skeleton;
-      });
-      return sk;
-    };
-
-    animate._initRig = ()=>{
-      if (!avatarRoot) return null;
-      const sk = animate._getSkeleton(avatarRoot);
-      if (!sk) return null;
-
-      const find = (names)=>{
-        for (const n of names){
-          const b = sk.getBoneByName(n);
-          if (b) return b;
+    if (BL.targets.length) {
+        const nowTime = performance.now()/1000;
+        if (BL.state === 0 && nowTime >= BL.next) {
+            BL.state = 1; BL.t = 0; BL.next = nowTime + 4.2 + Math.random()*1.6;
         }
-        return null;
-      };
-
-      const bones = {
-        spine01: find(['spine01','Spine1','mixamorigSpine1','spine']),
-        spine02: find(['spine02','Spine2','mixamorigSpine2']),
-        neck:  find(['neck','Neck','mixamorigNeck']),
-        head:  find(['head','Head','mixamorigHead']),
-        thighL: find(['thigh_L','thigh.L','LeftUpLeg','mixamorigLeftUpLeg']),
-        thighR: find(['thigh_R','thigh.R','RightUpLeg','mixamorigRightUpLeg']),
-        calfL:  find(['calf_L','shin_L','calf.L','LeftLeg','mixamorigLeftLeg']),
-        calfR:  find(['calf_R','shin_R','calf.R','RightLeg','mixamorigRightLeg']),
-        upArmL: find(['upperarm_L','upper_arm_L','upperarm.L','LeftArm','mixamorigLeftArm']),
-        upArmR: find(['upperarm_R','upper_arm_R','upperarm.R','RightArm','mixamorigRightArm']),
-        loArmL: find(['lowerarm_L','forearm_L','lowerarm.L','LeftForeArm','mixamorigLeftForeArm']),
-        loArmR: find(['lowerarm_R','forearm_R','lowerarm.R','RightForeArm','mixamorigRightForeArm']),
-        footL: find(['foot_L','foot.L','LeftFoot','mixamorigLeftFoot']),
-        footR: find(['foot_R','foot.R','RightFoot','mixamorigRightFoot']),
-        toesL: find(['toes_L','toe_L','toes.L','LeftToeBase','mixamorigLeftToeBase']),
-        toesR: find(['toes_R','toe_R','toes.R','RightToeBase','mixamorigRightToeBase'])
-      };
-
-      const base = new Map();
-      Object.values(bones).forEach(b=>{ if (b) base.set(b, b.quaternion.clone()); });
- // bake anatomic baseline into stored "base" so restore() keeps it
-const uaFlex = THREE.MathUtils.degToRad(ANAT.upperarmFlex || 0);
-if (uaFlex){
-  const qUAFlex = new THREE.Quaternion().setFromEuler(new THREE.Euler(uaFlex, 0, 0)); // X = shoulder flex
-
-  if (bones.upArmL){
-    const bq = base.get(bones.upArmL);
-    if (bq){
-      const baked = bq.clone().multiply(qUAFlex);
-      base.set(bones.upArmL, baked);
-      bones.upArmL.quaternion.copy(baked);
+        const setBlink = (v) => { for (const t of BL.targets) { t.mesh.morphTargetInfluences[t.idx] = v; } };
+        if (BL.state !== 0) {
+            BL.t += dt;
+            if (BL.state === 1) { 
+                const v = Math.min(1, BL.t / 0.06); setBlink(v); 
+                if (BL.t >= 0.06) { BL.state = 2; BL.t = 0; }
+            } else if (BL.state === 2) { 
+                setBlink(1); 
+                if (BL.t >= 0.02) { BL.state = 3; BL.t = 0; }
+            } else if (BL.state === 3) { 
+                const v = 1 - Math.min(1, BL.t / 0.10); setBlink(v); 
+                if (BL.t >= 0.10) { BL.state = 0; BL.t = 0; setBlink(0); }
+            }
+        }
     }
-  }
-  if (bones.upArmR){
-    const bq = base.get(bones.upArmR);
-    if (bq){
-      const baked = bq.clone().multiply(qUAFlex);
-      base.set(bones.upArmR, baked);
-      bones.upArmR.quaternion.copy(baked);
+
+    // ===== PROCEDURAL RIG LOGIC (If applicable) =====
+    if (animate._run && animate._run.rig && runNow) {
+        const R = animate._run;
+        const mph = sim.speedMph;
+        const k = Math.min(2.0, Math.max(0, mph / 6.0));
+        const freq = (1.6 * k) + 0.15;
+        R.phase += dt * (Math.PI * 2) * freq;
+        // Procedural bone rotations would happen here if GLB mixer is not used
     }
-  }
-}
-     
-// --- bake anatomic baseline into stored "base" so restore() keeps it ---
-if (bones.spine01){
-  const flex = THREE.MathUtils.degToRad(ANAT.spine01Flex || 0); // Roman=5, Roma=0
-  const qFlex = new THREE.Quaternion().setFromEuler(new THREE.Euler(flex, 0, 0));
 
-  const baseQ = base.get(bones.spine01);
-  if (baseQ){
-    const newBase = baseQ.clone().multiply(qFlex);
-    base.set(bones.spine01, newBase);
-    bones.spine01.quaternion.copy(newBase);
-  }
-}
-
-      // If we found basically nothing, don't pretend it worked
-      const foundCount = [...base.keys()].length;
-      if (foundCount < 4) return null;
-// --- bake model-specific anatomic baseline into base quaternions ---
-const tuck = THREE.MathUtils.degToRad(ANAT.shTuck);
-const er   = THREE.MathUtils.degToRad(ANAT.shER);
-const hip  = THREE.MathUtils.degToRad(ANAT.hipAdd);
-
-const tE = new THREE.Euler();
-const tQ = new THREE.Quaternion();
-
-const bake = (bone, ex, ey, ez)=>{
-  if (!bone) return;
-  const q = base.get(bone);
-  if (!q) return;
-  tE.set(ex, ey, ez);
-  tQ.setFromEuler(tE);
-  q.multiply(tQ);         // update stored base
-  bone.quaternion.copy(q); // apply immediately on load
-};
-
-// shoulders (mirrored)
-bake(bones.upArmL, 0, +er, -tuck);
-bake(bones.upArmR, 0, -er, +tuck);
-
-// hips/thigh adduction (mirrored) — Roma=5°, Roman=0°
-bake(bones.thighL, 0, 0, -hip);
-bake(bones.thighR, 0, 0, +hip);
-
-      return { bones, base };
-    };
-  }
-
-  const R = animate._run;
-
-  // init rig once model exists
-  if (!R.rig && avatarRoot && !avatarRoot.userData.__isMannequin){
-    R.rig = animate._initRig();
-  }
-
-  const applyAdd = (bone, ex, ey, ez)=>{
-    if (!R.rig || !bone) return;
-    const baseQ = R.rig.base.get(bone);
-    if (!baseQ) return;
-    R.tmpE.set(ex, ey, ez);
-    R.tmpQ.setFromEuler(R.tmpE);
-    bone.quaternion.copy(baseQ).multiply(R.tmpQ);
-  };
-
-
-// This tells the character: "Run only if the start button is on AND you have energy."
-const runNow = !!(sim.running && sim.energy > 0 && zoneCardio.visible);
-
-  if (runNow){
-    const mph = sim.speedMph;
-    const k = clamp(mph / 6.0, 0, 2.0);           // 1.0 at 6mph
-    const amp = clamp(k, 0, 1.35);
-    const freq = (1.6 * k) + 0.15;                // cycles/sec
-
-    R.phase += dt * (Math.PI * 2) * freq;
-
-    const s  = Math.sin(R.phase);
-    const s2 = Math.sin(R.phase * 2.0);
-
-    const hipAmp  = THREE.MathUtils.degToRad(28) * amp;
-    const kneeAmp = THREE.MathUtils.degToRad(90) * amp;
-    const armAmp  = THREE.MathUtils.degToRad(22) * amp;
-    const spineTw = THREE.MathUtils.degToRad(4)  * (amp * 0.6);
-    const b = R.rig.bones;
-
-// legs (hip swing + 5° THIGH ADDUCTION on Z) — ROMA ONLY
-if (ACTIVE_MODEL_ID === "Roma") {
-  const thighAdd = THREE.MathUtils.degToRad(5);
-  applyAdd(b.thighL,  hipAmp * s, 0, -thighAdd);
-  applyAdd(b.thighR, -hipAmp * s, 0, +thighAdd);
-} else {
-  applyAdd(b.thighL,  hipAmp * s, 0, 0);
-  applyAdd(b.thighR, -hipAmp * s, 0, 0);
-}
-
-
-
-    const bendL = Math.max(0, -s) * kneeAmp;
-    const bendR = Math.max(0,  s) * kneeAmp;
-    // knee flexion = X axis (rx). keep your existing bendL/bendR logic.
-  applyAdd(b.calfL, -bendL, 0, 0);
-  applyAdd(b.calfR, -bendR, 0, 0);
-// ankles/toes (dorsi in swing, plantar at toe-off)
-const swingL  = Math.max(0, -s);
-const swingR  = Math.max(0,  s);
-const stanceL = Math.max(0,  s);
-const stanceR = Math.max(0, -s);
-
-const ankleDorsi = THREE.MathUtils.degToRad(12) * amp; // toe clearance
-const anklePF    = THREE.MathUtils.degToRad(18) * amp; // toe-off
-const toeExt     = THREE.MathUtils.degToRad(15) * amp; // MTP extension at toe-off
-
-const ankleL = (+ankleDorsi * swingL) + (-anklePF * stanceL);
-const ankleR = (+ankleDorsi * swingR) + (-anklePF * stanceR);
-
-applyAdd(b.footL, ankleL, 0, 0);
-applyAdd(b.footR, ankleR, 0, 0);
-
-applyAdd(b.toesL, toeExt * stanceL, 0, 0);
-applyAdd(b.toesR, toeExt * stanceR, 0, 0);
-
-
-// arms (opposite) + MORE adduction + slight back bias + elbows
-// arms (swing reacts to mph; pose does NOT)
-const armTuck   = THREE.MathUtils.degToRad(17);  // adduction (Z)
-const armBack   = THREE.MathUtils.degToRad(10);  // slight shoulder extension (X)
-const humER     = THREE.MathUtils.degToRad(7);  // external rotation (Y)
-const elbowHold = THREE.MathUtils.degToRad(90);  // elbow flex (X)
-
-// one applyAdd per bone (no overwrites)
-applyAdd(b.upArmL, (-armAmp * s) - armBack, +humER, -armTuck);
-applyAdd(b.upArmR, ( armAmp * s) - armBack, -humER, +armTuck);
-
-applyAdd(b.loArmL, elbowHold, 0, 0);
-applyAdd(b.loArmR, elbowHold, 0, 0);
-
-
-// torso: rotate so the OPPOSITE shoulder comes forward to the STANCE leg (NO side-to-side shake)
-const torsoYaw  = THREE.MathUtils.degToRad(9) * amp * (-s);  // Y = axial rotation
-const torsoLean = THREE.MathUtils.degToRad(1.5) * amp * ( s); // Z = tiny counterbalance (optional)
-
-// use spine01 / spine02 / spine03 if available; otherwise fall back cleanly
-if (b.spine01 && b.spine02 && b.spine03){
-  applyAdd(b.spine01, 0, torsoYaw * 0.45, torsoLean * 0.45); // lower trunk
-  applyAdd(b.spine02, 0, torsoYaw * 0.35, torsoLean * 0.35); // mid trunk
-  applyAdd(b.spine03, 0, torsoYaw * 0.20, torsoLean * 0.20); // upper trunk
-} 
-else if (b.spine01 && b.spine02){
-  applyAdd(b.spine01, 0, torsoYaw * 0.60, torsoLean * 0.60);
-  applyAdd(b.spine02, 0, torsoYaw * 0.40, torsoLean * 0.40);
-}
-else if (b.spine01){
-  applyAdd(b.spine01, 0, torsoYaw, torsoLean);
-}
-else if (b.spine02){
-  applyAdd(b.spine02, 0, torsoYaw, torsoLean);
-}
-else if (b.spine03){
-  applyAdd(b.spine03, 0, torsoYaw, torsoLean);
-}
-
-
-// head/neck: FOLLOW the torso yaw slightly (don’t use s2 here or it “shakes”)
-if (b.neck) applyAdd(b.neck, 0, torsoYaw * 0.35, 0);
-if (b.head) applyAdd(b.head, 0, torsoYaw * 0.15, 0);
-
-
-if (runAction) runAction.paused = false;
-
-  } else {
-    // THIS FIXES THE RESET: If not running, force anatomic position
-    restore();
-    if (runAction) runAction.paused = true;
-  }
-
-  // treadmill motion
-  if (sim.running){
-    const treadSpeed = 0.35 + (sim.speedMph / 12) * 2.0;
-    for (const s of treadStrips){
-      s.position.z += dt * treadSpeed;
-      if (s.position.z > TREAD_MAX_Z) s.position.z = TREAD_MIN_Z;
-    }
-    const beltSpeed = 0.10 + (sim.speedMph / 12) * 1.10;
-    beltTex.offset.y = (beltTex.offset.y + dt * beltSpeed) % 1;
-  }
-
-  // billboard labels
-  if (labelsOn){
-    for (const ch of labelGroup.children) ch.lookAt(camera.position);
-  }
-
-  function drawTreadmillMph(screen){
-    const { ctx, c } = screen;
-    ctx.clearRect(0,0,c.width,c.height);
-    ctx.fillStyle = 'rgba(6,18,34,1)';
-    ctx.fillRect(0,0,c.width,c.height);
-    ctx.strokeStyle = 'rgba(56,189,248,0.85)';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(10,10,c.width-20,c.height-20);
-    ctx.fillStyle = '#e6eef7';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = '900 64px system-ui, -apple-system, Segoe UI, Roboto, Inter';
-    ctx.fillText(`${sim.speedMph.toFixed(1)} mph`, c.width/2, c.height/2);
-    screen.tex.needsUpdate = true;
-  }
-
-    // 3. HOUSEKEEPING (Timers)
+    // 4. Update HUD, Housekeeping, and Interactive Screens
     if (sim.fuelPenaltyTimer > 0) sim.fuelPenaltyTimer -= dt;
     if (sim.fuelAlertTimer > 0) sim.fuelAlertTimer -= dt;
     if (sim.throughputAlert > 0) sim.throughputAlert -= dt;
 
-    if (currentModule?.id === 'FL-001') {
-        trialTime = Math.max(0, trialTime - dt);
-        document.getElementById('trialTime').textContent = Math.ceil(trialTime);
+    updateHUD();
+    drawPanel(wallScreen, 'CARDIO BOARD');
+    drawTreadmillMph(consoleScreen);
+
+    // 5. DYNAMIC TRIAL STOP LOGIC
+    if (sim.energy <= 0 || trialTime <= 0 || sim.lactate >= 100) {
+        if (sim.running) {
+            checkTrialEndConditions();
+        }
     }
 
-// --- DYNAMIC TRIAL STOP & UNLOCK LOGIC ---
-if (sim.energy <= 0 || trialTime <= 0 || sim.lactate >= 100) {
+    // 6. Billboard labels
+    if (typeof labelsOn !== 'undefined' && labelsOn && typeof labelGroup !== 'undefined') {
+        for (const ch of labelGroup.children) ch.lookAt(camera.position);
+    }
+
+    // 7. Final Render
+    renderer.render(scene, camera);
+}
+
+// Logic Helper for End Conditions
+function checkTrialEndConditions() {
     const activeModel = document.getElementById('modelSelect').value;
     const currentLetter = document.getElementById('trialTag').textContent.trim();
     const $statusVal = document.getElementById('statusVal');
     const $trialMsg = document.getElementById('trialMsg');
 
-    // 1. GLOBAL FAILURE: SPEED VIOLATION
-    // Any change to the slider during a run results in immediate forensic failure
     if (speedViolation) {
         $statusVal.textContent = "INTEGRITY BREACH";
         $statusVal.style.color = "#ff9aa0";
-        $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> Speed was altered during session. Reset required.`;
-    } 
-    
-    // 2. TRIAL A LOGIC (Threshold Continuity)
-    else if (currentLetter === 'A') {
-        if (trialTime <= 0) {
-            const targetSpeed = (activeModel === "Roma") ? 6.7 : 6.3;
-            // Success conditions: Correct starting speed AND energy maintained above 60%
-            if (initialSpeed === targetSpeed && sim.energy >= 60) {
-                triggerUnlock("Trial A Complete: Aerobic Dominance Confirmed.");
-            } else {
-                let failReason = (initialSpeed !== targetSpeed) ? "Incorrect starting speed." : "Insufficient energy reserve.";
-                $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> ${failReason}`;
-            }
+        $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> Speed altered. Reset required.`;
+    } else if (currentLetter === 'A' && trialTime <= 0) {
+        const targetSpeed = (activeModel === "Roma") ? 6.7 : 6.3;
+        if (initialSpeed === targetSpeed && sim.energy >= 60) {
+            triggerUnlock("Trial A Complete.");
+        } else {
+            $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> Criteria not met.`;
         }
-    }
-
-    // 3. TRIAL B LOGIC (Metabolic Waste & Fueling)
-    else if (currentLetter === 'B') {
+    } else if (currentLetter === 'B') {
         if (sim.lactate >= 100) {
-            $statusVal.textContent = "CRITICAL FAILURE: ACIDOSIS";
-            $statusVal.style.color = "#ff9aa0";
-            $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> Waste accumulation exceeded clearance capacity.`;
-        } else if (sim.energy <= 0) {
-            $statusVal.textContent = "FAILURE: EXHAUSTION";
-            $statusVal.style.color = "#ff9aa0";
-            $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> W' Balance depleted.`;
-        } else if (trialTime <= 0) {
-            // Success condition: Survived 480s AND exactly 1 fuel event used
-            if (sim.fuelCount === 1) {
-                triggerUnlock("Trial B Complete: Metabolic Waste Managed.");
-            } else {
-                $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> Required fuel event (1) was not recorded.`;
-            }
+            $statusVal.textContent = "CRITICAL FAILURE";
+            $trialMsg.innerHTML = `<b style="color:#ff9aa0;">Trial Failed:</b> Acidosis.`;
+        } else if (trialTime <= 0 && sim.fuelCount === 1) {
+            triggerUnlock("Trial B Complete.");
         }
     }
 
-    // 4. PLACEHOLDER FOR FUTURE TRIALS (C, D, etc.)
-    else if (currentLetter === 'C') {
-        // Trial C logic goes here...
-    }
-
-    // --- STOP SIMULATION ---
     sim.running = false;
-    sim.hasStarted = false; // Unlocks trial switcher in showFL001Trial
+    sim.hasStarted = false;
     if (runAction) runAction.paused = true;
-    restore(); 
+    if (typeof restore === "function") restore();
     document.getElementById('startBtn').textContent = "Start";
 }
-
-    updateHUD();
-    renderer.render(scene, camera);
 
 function triggerUnlock(msg) {
     sim.running = false;
     if (runAction) runAction.paused = true;
-    if (window.controls) window.controls.enabled = true; 
-
     const currentLetter = document.getElementById('trialTag').textContent.trim();
     const $trialMsg = document.getElementById('trialMsg');
 
     if (currentLetter === 'A') {
-        // SUCCESSFUL TRIAL A
         $trialMsg.innerHTML = `<b style="color:#38bdf8;">Goal Reached:</b> Trial A validated. Unlocking Trial B...`;
-        
         setTimeout(() => {
-            // Clean state for transition
-            sim.hasStarted = false;
-            sim.fuelCount = 0;
-            sim.lactate = 0;
-            speedViolation = false;
-            
-            // Auto-load Trial B parameters (480s, Fuel enabled)
+            sim.fuelCount = 0; sim.lactate = 0;
             showFL001Trial(window.currentTrials, 'B');
-            $trialMsg.innerHTML = `<b>Trial B Loaded.</b> Survive 480s and record 1 fueling event.`;
         }, 3000);
-
     } else if (currentLetter === 'B') {
-        // SUCCESSFUL TRIAL B
-        $trialMsg.innerHTML = `<b style="color:#38bdf8;">Forensic Validation Successful.</b> All trials complete.`;
-        
-        // Show the Final Assessment Button
+        $trialMsg.innerHTML = `<b style="color:#38bdf8;">Forensic Validation Successful.</b>`;
         const aBtn = document.getElementById('assessmentBtn');
         if (aBtn) {
             aBtn.style.display = 'block';
-            const modId = document.getElementById('moduleSelect').value || "FL-001";
-// Corrected for Module 1 (FL-001)
-aBtn.onclick = () => { 
-  const targetURL = `mcq.html?module=FL-001&mode=review`;
-  window.open(targetURL, '_blank');
-};
+            aBtn.onclick = () => window.open(`mcq.html?module=FL-001&mode=review`, '_blank');
         }
     }
 }
-renderer.setAnimationLoop(animate);
 
-// 9) Enter Studio (gate -> studio)
+// 9) Enter Studio logic
 $enter.addEventListener('click', async () => {
-  const modelId = document.getElementById('modelSelect').value; 
-  const moduleId = document.getElementById('moduleSelect').value;
-  
-  let age = (modelId === "Roman") ? 43 : 34;
-  let hrMax = 220 - age;
-  sim.vo2Max = 15.3 * (hrMax / 72); 
+    const modelId = document.getElementById('modelSelect').value; 
+    const moduleId = document.getElementById('moduleSelect').value;
+    let age = (modelId === "Roman") ? 43 : 34;
+    let hrMax = 220 - age;
+    sim.vo2Max = 15.3 * (hrMax / 72); 
 
-  setAnatForModel(modelId);
-  $enter.disabled = true;
-  $enter.textContent = "Loading...";
+    setAnatForModel(modelId);
+    $enter.disabled = true;
+    $enter.textContent = "Loading...";
 
-  try {
-    await loadSelectedModel(modelId, (p) => { 
-      $enter.textContent = `Loading ${p}%`; 
-    });
+    try {
+        await loadSelectedModel(modelId, (p) => { $enter.textContent = `Loading ${p}%`; });
+        document.getElementById('gate').style.display = "none";
+        if (document.getElementById('ui')) document.getElementById('ui').style.display = "flex";
+        if (document.getElementById('badge')) document.getElementById('badge').style.display = "block";
+        if (moduleId === 'FL-001') setZone('cardio'); 
+        enterModule(moduleId);
+        if (typeof snapCam === "function") snapCam();
 
-    document.getElementById('gate').style.display = "none";
-    
-    const uiMain = document.getElementById('ui');
-    const badgeMenu = document.getElementById('badge');
-
-    if (uiMain) uiMain.style.display = "flex";
-    if (badgeMenu) {
-        badgeMenu.style.display = "block";
-        badgeMenu.style.top = "14px";
+        const savedStatus = localStorage.getItem(`${moduleId}_Status`);
+        if (savedStatus === 'completed') {
+            const titleEl = document.getElementById('moduleTitle');
+            if (titleEl && !titleEl.innerHTML.includes('✓')) titleEl.innerHTML += " <span style='color:#4ade80;'>[✓]</span>";
+        }
+    } catch (e) {
+        console.error(e);
+        $enter.textContent = "Error";
+    } finally {
+        $enter.disabled = false;
     }
-
-    if (moduleId === 'FL-001') setZone('cardio'); 
-
-    enterModule(moduleId);
-    snapCam();
-
- // --- PERSISTENCE & REVIEW LOGIC ---
-    const savedStatus = localStorage.getItem(`${moduleId}_Status`);
-    const reviewBtn = document.getElementById('reviewBtn');
-
-    if (savedStatus === 'completed') {
-        // 1. Keep the Checkmark in the HUD title
-        const titleEl = document.getElementById('moduleTitle');
-        if (!titleEl.innerHTML.includes('✓')) {
-            titleEl.innerHTML += " <span style='color:#4ade80; margin-left:8px;'>[✓ Completed]</span>";
-        }
-
-// 2. Show Review Button and Open in New Tab
-        if (reviewBtn) {
-            reviewBtn.style.display = 'block';
-            reviewBtn.onclick = () => {
-                const targetURL = `mcq.html?module=${moduleId}`;
-                // Opens in a new browser tab/window
-                window.open(targetURL, '_blank');
-            };
-        }
-    } else {
-        if (reviewBtn) reviewBtn.style.display = 'none';
-    } 
-    // -----------------------------------
-  } catch (e) {
-    console.error("Entry Error:", e);
-    $enter.textContent = "Error - Check Console";
-  } finally {
-    $enter.disabled = false;
-  }
 });
 
 addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
-</script>
+
+// Initialize the loop
+renderer.setAnimationLoop(animate);
 <div id="instrOverlay" style="position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; background:rgba(7,16,27,0.96); backdrop-filter:blur(10px); font-family:system-ui,-apple-system,sans-serif;">
     <div style="width:min(760px, 95vw); max-height:85vh; background:#0f172a; border:1px solid rgba(56,189,248,0.4); border-radius:24px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,0.6);">
         
