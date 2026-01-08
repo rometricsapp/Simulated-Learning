@@ -1602,37 +1602,69 @@ function updateHUD() {
         $status.style.color = "#cfe3ff";
     }
 }    
+/* ==========================================================
+   1. CONTROLS SETUP (Update this section in your code)
+   ========================================================== */
+window.controls = new OrbitControls(camera, renderer.domElement);
+window.controls.target.set(0, 1.35, 0);
+window.controls.enableDamping = true;
+window.controls.dampingFactor = 0.15; // Increased for better feel
+window.controls.rotateSpeed = 2.5;    // Fixed: Increased swipe speed
+window.controls.maxPolarAngle = Math.PI * 0.49;
 
+/* ==========================================================
+   2. CORRECTED ANIMATE FUNCTION
+   ========================================================== */
 const clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
     
-    // 1. Get Delta Time (fixes the 'dt' error)
+    // 1. Get Delta Time
     const dt = clock.getDelta();
-    const now = clock.getElapsedTime();
 
-    // 2. Only run simulation logic if 'running' is true
-    if (sim.running && sim.energy > 0) {
-        // Decrement Trial Timer
-        trialTime = Math.max(0, trialTime - dt);
-        document.getElementById('trialTime').textContent = Math.ceil(trialTime);
+    // 2. Update 3D Controls First
+    controls.update();
 
-        // Run Metabolic Engine logic here...
-        // (Move your lactate and energy drain code here)
+    // 3. Movement Logic (The Animation Engine)
+    const runNow = !!(sim.running && sim.energy > 0);
+
+    if (runNow) {
+        // This is the missing line that makes the legs move:
+        if (mixer) mixer.update(dt); 
+        
+        if (runAction) {
+            runAction.paused = false;
+            runAction.play();
+        }
+
+        // Logic for Trial Timer
+        if (currentModule?.id === 'FL-001') {
+            trialTime = Math.max(0, trialTime - dt);
+            document.getElementById('trialTime').textContent = Math.ceil(trialTime);
+        }
+
+        // Treadmill belt movement
+        const beltSpeed = 0.10 + (sim.speedMph / 12) * 1.10;
+        beltTex.offset.y = (beltTex.offset.y + dt * beltSpeed) % 1;
+
+    } else {
+        // Stop movement and reset to pose
+        if (runAction) runAction.paused = true;
+        if (typeof restore === "function") restore();
     }
 
-    // 3. Update Controls and Render
-    controls.update();
-    renderer.render(scene, camera);
-    
-    // 4. Update Screens (only update textures if needed to save performance)
+    // 4. Update HUD and Interactive Screens
+    updateHUD();
     drawPanel(wallScreen, 'CARDIO BOARD');
     drawTreadmillMph(consoleScreen);
-    
-    updateHUD();
+
+    // 5. Final Render
+    renderer.render(scene, camera);
 }
-  
+
+// Start the loop
+animate();
 // ===== BLINK (works for BOTH Roma + Roman via auto-detect morph names) =====
 if (!animate._blink) animate._blink = { model:null, targets:[], state:0, t:0, next:0 };
 
