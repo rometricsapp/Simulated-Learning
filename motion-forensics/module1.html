@@ -1587,28 +1587,35 @@ function updateHUD() {
     }
 }    
 
-    const clock = new THREE.Clock();
-let lastT = clock.getElapsedTime();
-// --- GLOBAL RESTORE FUNCTION ---
-// This resets the avatar bones to their original positions.
-const restore = () => {
-    const R = animate._run;
-    if (R && R.rig) {
-        for (const [b, q] of R.rig.base) b.quaternion.copy(q);
-    }
-};
-  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+const clock = new THREE.Clock();
 
 function animate() {
-  renderer.setAnimationLoop(() => {});
-
     requestAnimationFrame(animate);
-
+    
+    // 1. Get Delta Time (fixes the 'dt' error)
+    const dt = clock.getDelta();
     const now = clock.getElapsedTime();
-    let dt = now - lastT;
-    lastT = now;
 
+    // 2. Only run simulation logic if 'running' is true
+    if (sim.running && sim.energy > 0) {
+        // Decrement Trial Timer
+        trialTime = Math.max(0, trialTime - dt);
+        document.getElementById('trialTime').textContent = Math.ceil(trialTime);
+
+        // Run Metabolic Engine logic here...
+        // (Move your lactate and energy drain code here)
+    }
+
+    // 3. Update Controls and Render
     controls.update();
+    renderer.render(scene, camera);
+    
+    // 4. Update Screens (only update textures if needed to save performance)
+    drawPanel(wallScreen, 'CARDIO BOARD');
+    drawTreadmillMph(consoleScreen);
+    
+    updateHUD();
+}
   
 // ===== BLINK (works for BOTH Roma + Roman via auto-detect morph names) =====
 if (!animate._blink) animate._blink = { model:null, targets:[], state:0, t:0, next:0 };
@@ -1988,11 +1995,6 @@ if (runAction) runAction.paused = false;
     ctx.fillText(`${sim.speedMph.toFixed(1)} mph`, c.width/2, c.height/2);
     screen.tex.needsUpdate = true;
   }
-
-// 1. Update the Screen Displays
-drawPanel(wallScreen, 'CARDIO BOARD');
-drawTreadmillMph(consoleScreen);
-
 
     // 3. HOUSEKEEPING (Timers)
     if (sim.fuelPenaltyTimer > 0) sim.fuelPenaltyTimer -= dt;
