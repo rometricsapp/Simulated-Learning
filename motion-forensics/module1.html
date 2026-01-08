@@ -1341,7 +1341,7 @@ zoneCardio.add(boardGlow);
         return avatarRoot;
       }
 
-      return await new Promise((resolve, reject)=>{
+return await new Promise((resolve, reject)=>{
         const loader = new GLTFLoader();
 
         loader.load(
@@ -1352,22 +1352,25 @@ zoneCardio.add(boardGlow);
 
             avatarRoot.traverse(o=>{ if (o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
             scene.add(avatarRoot);
+
             // --- animation setup (run/walk/first clip) ---
-mixer = null;
-runAction = null;
+            mixer = new THREE.AnimationMixer(avatarRoot);
+            runAction = null;
 
-const clips = (gltf.animations || []);
-if (clips.length){
-  mixer = new THREE.AnimationMixer(avatarRoot);
-  const clip =
-    clips.find(c => /run|jog/i.test(c.name)) ||
-    clips.find(c => /walk/i.test(c.name)) ||
-    clips[0];
+            const clips = (gltf.animations || []);
+            if (clips.length){
+              const clip =
+                clips.find(c => /run|jog/i.test(c.name)) ||
+                clips.find(c => /walk/i.test(c.name)) ||
+                clips[0];
 
-  runAction = mixer.clipAction(clip);
-  runAction.play();
-  runAction.paused = true; // wait for Start
-}
+              runAction = mixer.clipAction(clip);
+              
+              // FIX: Set weight so the animation can actually move the bones
+              runAction.setEffectiveWeight(1.0); 
+              runAction.play();
+              runAction.paused = true; // wait for Start
+            }
 
             // normalize to ~1.75m tall (ignore far outliers)
             avatarRoot.updateWorldMatrix(true, true);
@@ -1415,8 +1418,6 @@ if (clips.length){
           (err)=>reject(err)
         );
       });
-    }
-
     // ==============================
     // 6) Zone + Module router (with snap)
     // ==============================
