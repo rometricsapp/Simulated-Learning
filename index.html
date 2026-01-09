@@ -168,9 +168,11 @@ main{
 
   </section>
 </main>
-<!-- ================= DEBUG POSITION TOOL (FIXED) ================= -->
+
+
+  <!-- ================= DEBUG POSITION TOOL ================= -->
 <style>
-#debugBtn{
+#dbgBtn{
   position:fixed;
   bottom:20px;
   right:20px;
@@ -183,7 +185,7 @@ main{
   z-index:9999;
 }
 
-#debugPanel{
+#dbgPanel{
   position:fixed;
   bottom:70px;
   right:20px;
@@ -194,20 +196,17 @@ main{
   font-size:12px;
   z-index:9999;
   display:none;
-  width:230px;
+  width:240px;
 }
 
-#debugPanel label{display:block;margin-top:8px}
-#debugPanel input,#debugPanel select{width:100%}
-
-.draggable{
-  cursor:grab;
-}
+#dbgPanel label{display:block;margin-top:10px}
+#dbgPanel input,#dbgPanel select{width:100%}
+#dbgOut{margin-top:10px;font-size:11px;white-space:pre}
 </style>
 
-<div id="debugBtn">DEBUG</div>
+<div id="dbgBtn">DEBUG</div>
 
-<div id="debugPanel">
+<div id="dbgPanel">
   <strong>DEBUG MODE</strong>
 
   <label>Target
@@ -217,92 +216,80 @@ main{
     </select>
   </label>
 
-  <label>Scale
-    <input type="range" id="dbgScale" min="0.5" max="1.5" step="0.01">
+  <label>X (left / right)
+    <input type="range" id="dbgX" min="-500" max="500" value="0">
   </label>
 
-  <pre id="dbgOutput"></pre>
+  <label>Y (up / down)
+    <input type="range" id="dbgY" min="-500" max="500" value="0">
+  </label>
+
+  <label>Scale
+    <input type="range" id="dbgS" min="0.5" max="1.5" step="0.01" value="1">
+  </label>
+
+  <pre id="dbgOut"></pre>
 </div>
 
 <script>
-let debugOn = false;
-const btn = document.getElementById('debugBtn');
-const panel = document.getElementById('debugPanel');
-const targetSel = document.getElementById('dbgTarget');
-const scaleRange = document.getElementById('dbgScale');
-const output = document.getElementById('dbgOutput');
+const btn = document.getElementById('dbgBtn');
+const panel = document.getElementById('dbgPanel');
+const tgtSel = document.getElementById('dbgTarget');
+const xR = document.getElementById('dbgX');
+const yR = document.getElementById('dbgY');
+const sR = document.getElementById('dbgS');
+const out = document.getElementById('dbgOut');
 
 let current = document.querySelector('.laptop');
 
-function getState(el){
-  return el._dbg || { x:0, y:0, s:1 };
+function state(el){
+  if(!el._dbg) el._dbg = {x:0,y:0,s:1};
+  return el._dbg;
 }
 
 function apply(el){
-  const d = getState(el);
+  const d = state(el);
   el.style.transform = `translate(${d.x}px, ${d.y}px) scale(${d.s})`;
 }
 
 function log(el){
-  const d = getState(el);
-  output.textContent =
+  const d = state(el);
+  out.textContent =
 `transform:
-translate(${Math.round(d.x)}px, ${Math.round(d.y)}px)
+translate(${d.x}px, ${d.y}px)
 scale(${d.s})`;
-  console.log(el.className, output.textContent);
+  console.log(el.className, out.textContent);
 }
 
 btn.onclick = ()=>{
-  debugOn = !debugOn;
-  panel.style.display = debugOn ? 'block' : 'none';
-  document.querySelectorAll('.laptop,.phone').forEach(el=>{
-    el.classList.toggle('draggable', debugOn);
-  });
+  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 };
 
-targetSel.onchange = ()=>{
-  current = document.querySelector('.' + targetSel.value);
-  const d = getState(current);
-  scaleRange.value = d.s;
+tgtSel.onchange = ()=>{
+  current = document.querySelector('.' + tgtSel.value);
+  const d = state(current);
+  xR.value = d.x;
+  yR.value = d.y;
+  sR.value = d.s;
   log(current);
 };
 
-scaleRange.oninput = ()=>{
-  const d = getState(current);
-  d.s = parseFloat(scaleRange.value);
-  current._dbg = d;
-  apply(current);
-  log(current);
-};
-
-document.querySelectorAll('.laptop,.phone').forEach(el=>{
-  let dragging=false,startX,startY;
-
-  el.onmousedown = e=>{
-    if(!debugOn) return;
-    dragging=true;
-    current=el;
-    targetSel.value = el.classList.contains('laptop')?'laptop':'phone';
-    const d = getState(el);
-    startX = e.clientX - d.x;
-    startY = e.clientY - d.y;
-    scaleRange.value = d.s;
-  };
-
-  document.onmousemove = e=>{
-    if(!dragging) return;
-    const d = getState(current);
-    d.x = e.clientX - startX;
-    d.y = e.clientY - startY;
-    current._dbg = d;
+[xR,yR,sR].forEach(r=>{
+  r.oninput = ()=>{
+    const d = state(current);
+    d.x = parseInt(xR.value);
+    d.y = parseInt(yR.value);
+    d.s = parseFloat(sR.value);
     apply(current);
     log(current);
   };
-
-  document.onmouseup = ()=> dragging=false;
 });
+
+apply(current);
+log(current);
 </script>
 <!-- ================= END DEBUG TOOL ================= -->
+
 
 
 </body>
