@@ -232,14 +232,36 @@ section {
   .copy h1 { font-size: 2rem; }
   .copy p { font-size: 1rem; max-width: 100%; }
 
-  .visual { text-align: center; }
-  .laptop { max-width: 100%; margin: 0 auto; }
-  .phone { width: 80px; left: 10%; bottom: -5%; }
+  /* Corrected Phone visibility */
+  .visual { 
+    text-align: center; 
+    position: relative; 
+    display: block;
+    margin-top: 20px;
+    height: 250px; /* Gives space for the images */
+  }
+  
+  .laptop { 
+    max-width: 100%; 
+    margin: 0 auto; 
+    transform: none; 
+    position: relative;
+    z-index: 1;
+  }
+  
+  .phone { 
+    width: 80px; 
+    position: absolute;
+    left: 15%; 
+    bottom: -5%; 
+    transform: none; 
+    z-index: 2;
+  }
 
   .referral-text h3 { font-size: 1.5rem; }
   
   .module-row {
-    grid-template-columns: 1fr 1fr; /* Stacks nicely in 2 columns on mobile */
+    grid-template-columns: 1fr 1fr;
   }
 }
 
