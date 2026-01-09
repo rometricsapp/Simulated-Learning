@@ -46,32 +46,15 @@ main{
 .hero{
   width:100%;
   max-width:1200px;
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns: 1fr 1.2fr; /* text | devices */
+  gap:40px;
   align-items:center;
 }
 
-/* ===== DEVICES ===== */
-.visual{
-  display:flex;
-  align-items:flex-start;
-  gap:48px;
-  margin-top:20px;
-}
-
-.laptop{
-  max-width:680px;
-  width:100%;
-}
-
-.phone{
-  width:190px;
-}
-
-/* ===== TEXT ===== */
+/* ===== COPY ===== */
 .copy{
-  text-align:center;
-  margin-top:24px;
+  text-align:left;
 }
 
 .copy h1{
@@ -83,17 +66,16 @@ main{
 }
 
 .copy p{
-  margin:16px auto 0;
+  margin-top:16px;
   font-size:1.1rem;
   color:#475569;
-  max-width:520px;
+  max-width:480px;
 }
 
 .actions{
   margin-top:24px;
   display:flex;
   gap:14px;
-  justify-content:center;
 }
 
 .primary{
@@ -112,15 +94,43 @@ main{
   font-weight:600;
 }
 
+/* ===== DEVICES (RIGHT SIDE) ===== */
+.visual{
+  display:flex;
+  justify-content:flex-end;
+  align-items:flex-start;
+  gap:32px;
+}
+
+.laptop{
+  max-width:680px;
+  width:100%;
+}
+
+.phone{
+  width:180px;
+  margin-top:60px;
+}
+
 /* ===== MOBILE ===== */
 @media (max-width:900px){
   main{padding:16px}
+  .hero{
+    grid-template-columns:1fr;
+    text-align:center;
+  }
+  .copy{
+    text-align:center;
+  }
+  .actions{
+    justify-content:center;
+  }
   .visual{
-    flex-direction:column;
-    align-items:center;
-    gap:24px;
+    justify-content:center;
+    margin-top:24px;
   }
   .phone{
+    margin-top:0;
     width:160px;
   }
   .copy h1{
@@ -139,11 +149,6 @@ main{
 <main>
   <section class="hero">
 
-    <div class="visual">
-      <img src="Rometrics on laptop.png" class="laptop" alt="">
-      <img src="Rometrics on phone.png" class="phone" alt="">
-    </div>
-
     <div class="copy">
       <h1>Clinical motion,<br>measured clearly.</h1>
       <p>
@@ -154,6 +159,11 @@ main{
         <div class="primary">Explore Platform</div>
         <div class="secondary">View Modules</div>
       </div>
+    </div>
+
+    <div class="visual">
+      <img src="Rometrics on laptop.png" class="laptop" alt="">
+      <img src="Rometrics on phone.png" class="phone" alt="">
     </div>
 
   </section>
