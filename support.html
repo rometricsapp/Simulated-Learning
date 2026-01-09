@@ -6,15 +6,21 @@
 <title>ROMetrics | Support</title>
 
 <style>
+/* Base Styles & Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 *{box-sizing:border-box}
 html,body{
   margin:0;
   height:100%;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 body{
-  background:#f8fafc;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   color:#020617;
   display:flex;
   flex-direction:column;
@@ -22,27 +28,56 @@ body{
 
 /* ===== HEADER ===== */
 header{
-  padding:16px 24px;
+  padding:20px 24px;
   display:flex;
-  justify-content:center;
+  justify-content:space-between;
   align-items:center;
-  border-bottom:1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid rgba(229, 231, 235, 0.5);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .brand{
   display:flex;
   align-items:center;
-  gap:6px;
+  gap:8px;
 }
 
 .brand img{
-  height:18px;
+  height:24px;
 }
 
 .brand span{
   font-weight:800;
-  font-size:1.4rem;
+  font-size:1.5rem;
   letter-spacing:-0.03em;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.home-btn {
+  text-decoration: none;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+.home-btn:hover {
+  background: #f1f5f9;
+  transform: translateX(-3px);
+  color: #2563eb;
 }
 
 /* ===== CONTENT ===== */
@@ -50,7 +85,8 @@ main{
   flex:1;
   display:flex;
   justify-content:center;
-  padding:32px 20px;
+  padding:60px 20px;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .support{
@@ -59,58 +95,87 @@ main{
 }
 
 .support h1{
-  font-size:2.2rem;
-  font-weight:800;
-  letter-spacing:-0.04em;
+  font-size:2.8rem;
+  font-weight:900;
+  letter-spacing:-0.05em;
   margin:0;
+  color: #1e293b;
 }
 
-.support p{
-  margin-top:14px;
-  font-size:1.05rem;
+.support p.intro-text{
+  margin-top:16px;
+  font-size:1.1rem;
   color:#475569;
   line-height:1.6;
 }
 
-/* ===== SUPPORT CARD ===== */
+/* ===== SUPPORT CARDS ===== */
 .card{
-  margin-top:28px;
+  margin-top:32px;
   background:#ffffff;
-  border-radius:16px;
-  padding:24px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+  border-radius:24px;
+  padding:32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255,255,255,0.7);
 }
 
 .card h2{
-  margin:0;
-  font-size:1.2rem;
-  font-weight:700;
+  margin:0 0 10px 0;
+  font-size:1.5rem;
+  font-weight:800;
 }
 
-.card p{
-  margin-top:10px;
-  font-size:.95rem;
+.contact-item {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.contact{
-  margin-top:16px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
+.contact-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  background: #fff;
+  border-color: #dbeafe;
 }
 
-.contact a{
-  text-decoration:none;
-  font-weight:700;
-  color:#2563eb;
+.contact-item strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.contact-item span {
+  display: block;
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.contact-item a {
+  text-decoration: none;
+  font-weight: 700;
+  color: #2563eb;
+  font-size: 1rem;
+  display: inline-block;
+  transition: color 0.2s;
+}
+
+.contact-item a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
 }
 
 /* ===== FOOTER ===== */
 footer{
   text-align:center;
-  padding:14px;
-  font-size:.8rem;
-  color:#64748b;
+  padding:30px;
+  font-size:.85rem;
+  color:#94a3b8;
 }
 </style>
 </head>
@@ -122,40 +187,40 @@ footer{
     <img src="rometrics-logo.png" alt="ROMetrics logo">
     <span>ROMetrics</span>
   </div>
+  <a href="https://rometrics.app" class="home-btn">
+    ← Return to Homepage
+  </a>
 </header>
 
 <main>
   <section class="support">
 
     <h1>Support</h1>
-    <p>
-      ROMetrics is a biomechanics and clinical learning platform.
-      Use the contact options below to make sure your message reaches
-      the right team.
+    <p class="intro-text">
+      ROMetrics is a biomechanics and clinical learning platform. 
+      Select a category below to ensure your inquiry reaches the correct department.
     </p>
 
     <div class="card">
-      <h2>Contact</h2>
-      <p>
-        Please choose the email that best matches your request.
-      </p>
+      <h2>Get in Touch</h2>
+      <p style="color:#64748b;">Choose the contact channel that best matches your request.</p>
 
       <div class="contact">
-        <div>
-          <strong>Technical Support</strong><br>
+        <div class="contact-item">
+          <strong>Technical Support</strong>
           <span>
-            Module issues, errors, bugs, feature suggestions, simulation problems,
-            or anything related to how the platform functions.
-          </span><br>
+            Module issues, errors, bugs, feature suggestions, simulation problems, 
+            or platform functionality.
+          </span>
           <a href="mailto:support@rometrics.app">support@rometrics.app</a>
         </div>
 
-        <div>
-          <strong>Account & Administrative</strong><br>
+        <div class="contact-item">
+          <strong>Account & Administrative</strong>
           <span>
-            Billing questions, account access, subscriptions, institutional use,
-            or general administrative inquiries.
-          </span><br>
+            Billing, account access, subscriptions, institutional licensing, 
+            or general inquiries.
+          </span>
           <a href="mailto:admin@rometrics.app">admin@rometrics.app</a>
         </div>
       </div>
@@ -165,7 +230,7 @@ footer{
 </main>
 
 <footer>
-  © ROMetrics · Clinical Motion Education Platform
+  © 2026 ROMetrics · Clinical Motion Education Platform
 </footer>
 
 </body>
