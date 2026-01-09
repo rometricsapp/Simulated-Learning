@@ -3,245 +3,238 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ROMetrics</title>
+<title>ROMetrics | Clinical Motion Platform</title>
 
 <style>
+:root {
+  --primary: #0f172a;
+  --accent: #2563eb;
+  --bg: #fcfdfe;
+  --text-main: #1e293b;
+  --text-muted: #475569;
+  --border: #eef2f6;
+}
+
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translateY(40px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 *{box-sizing:border-box}
 html,body{
   margin:0;
   height:100%;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-}
-
-body{
-  background:#f8fafc;
-  color:#020617;
-  display:flex;
-  flex-direction:column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--primary);
+  overflow-x: hidden;
 }
 
 /* ===== HEADER ===== */
 header{
-  padding:16px 20px;
+  padding: 1.2rem 2.5rem;
   display:grid;
   grid-template-columns:1fr auto 1fr;
   align-items:center;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .brand{
   display:flex;
   align-items:center;
-  gap:2px;
+  gap:8px;
   justify-self:center;
+  text-decoration: none;
+  color: inherit;
 }
 
-.brand img{
-  height:38px;
-  width:auto;
-}
+.brand img{ height:42px; width:auto; }
+.brand span{ font-weight:800; font-size:1.5rem; letter-spacing: -0.04em; }
 
-.brand span{
-  font-weight:800;
-  font-size:1.4rem;
-  letter-spacing: -0.03em;
-}
-
-/* HEADER BUTTONS */
-.header-actions{
-  justify-self:end;
-  display:flex;
-  gap:10px;
-}
+.header-actions{ justify-self:end; display:flex; gap:12px; }
 
 .header-actions a{
-  background:#2563eb;
+  background: var(--accent);
   color:#fff;
-  padding:8px 14px;
-  border-radius:999px;
+  padding:10px 20px;
+  border-radius:8px;
   font-size:.85rem;
   font-weight:700;
   text-decoration:none;
-  white-space:nowrap;
+  transition: all 0.2s;
 }
 
-/* ===== HERO ===== */
+.header-actions a:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ===== MAIN CONTENT ===== */
 main{
   flex:1;
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  padding:24px 24px 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.hero{
-  width:100%;
-  max-width:1200px;
+/* GENERAL SECTION PADDING */
+section {
+    padding: 100px 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.content-wrapper {
+    width: 100%;
+    max-width: 1200px;
+}
+
+/* ROW 1: HERO */
+.hero-content {
   display:grid;
-  grid-template-columns:1fr 1.2fr;
-  gap:40px;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
   align-items:center;
-}
-
-/* ===== COPY ===== */
-.copy{
-  text-align:left;
+  animation: slideUpFade 0.8s ease-out;
 }
 
 .copy h1{
-  font-size:2.6rem;
-  line-height:1.05;
-  margin:0;
-  font-weight:800;
-  letter-spacing:-0.04em;
+  font-size: 3.8rem;
+  line-height: 1;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: var(--primary);
 }
 
 .copy p{
-  margin-top:16px;
-  font-size:1.1rem;
-  color:#475569;
-  max-width:480px;
+  margin-top: 24px;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  line-height: 1.6;
 }
 
-.actions{
-  margin-top:24px;
+.visual { position: relative; }
+.laptop { width: 100%; max-width: 700px; transform: scale(1.1) translateX(120px); }
+.phone { position: absolute; width: 160px; left: -40px; bottom: -20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-radius: 20px; }
+
+/* ROW 2: ACCESS & PRICING (Blue Tint) */
+.access-section {
+    background: #f1f5f9;
 }
 
-.actions a{
-  background:#2563eb;
-  color:#fff;
-  padding:14px 28px;
-  border-radius:999px;
-  font-size:1rem;
-  font-weight:700;
-  text-decoration:none;
-  display:inline-block;
+.access-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
 }
 
-/* ===== VISUALS ===== */
-.visual{
-  display:flex;
-  justify-content:flex-end;
-  align-items:center;
-  gap:24px;
+.pricing-table {
+    background: #fff;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
-.laptop{
-  max-width:680px;
-  width:100%;
-  transform: translate(270px, 0px) scale(1.06);
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #f1f5f9;
 }
 
-.phone{
-  width:180px;
-  transform: translate(-448px, 83px) scale(1.48);
+.price-row:last-child { border: none; }
+.price-label { font-weight: 600; color: var(--text-muted); }
+.price-value { font-weight: 800; color: var(--accent); }
+
+/* ROW 3: REFERRAL (Clean White) */
+.referral-content {
+    display: flex;
+    align-items: center;
+    gap: 60px;
 }
 
+.referral-text { flex: 1; }
+
+.referral-text h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 16px;
+}
+
+.referral-text h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 20px;
+    letter-spacing: -0.03em;
+}
+
+/* BUTTONS */
+.cta-btn {
+  background: var(--accent);
+  color: #fff;
+  padding: 16px 36px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+}
 
 /* ===== MODULE DOCK ===== */
 .modules{
-  margin-top:auto;
-  width:100%;
-  background:#ffffff;
-  border-top:1px solid #e5e7eb;
-  padding:18px 14px 24px;
+  background:#fff;
+  border-top:1px solid var(--border);
+  padding: 40px 20px 60px;
 }
 
 .module-row{
   display:grid;
   grid-template-columns:repeat(5,1fr);
-  gap:12px;
-  max-width:960px;
+  gap:16px;
+  max-width:1100px;
   margin:0 auto;
 }
 
 .module{
-  padding:14px 10px;
-  border-radius:16px;
-  text-align:center;
-  font-size:.8rem;
-  font-weight:700;
-  color:#020617;
-  pointer-events:none;
-  background:linear-gradient(135deg,#e0e7ff,#f8fafc);
-  box-shadow:0 8px 20px rgba(37,99,235,0.15);
+  padding: 24px 15px;
+  border-radius: 16px;
+  text-align: center;
+  font-size: .9rem;
+  font-weight: 700;
+  background: var(--bg);
+  border: 1px solid var(--border);
 }
 
 .module span{
   display:block;
-  font-size:.65rem;
-  font-weight:800;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:#2563eb;
-  margin-bottom:6px;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
 }
 
-/* individual accent hues */
-.module:nth-child(1){background:linear-gradient(135deg,#dbeafe,#f8fafc)}
-.module:nth-child(2){background:linear-gradient(135deg,#cffafe,#f8fafc)}
-.module:nth-child(3){background:linear-gradient(135deg,#dcfce7,#f8fafc)}
-.module:nth-child(4){background:linear-gradient(135deg,#fae8ff,#f8fafc)}
-.module:nth-child(5){background:linear-gradient(135deg,#fff7ed,#f8fafc)}
-
-/* ===== MOBILE FIX ===== */
-@media (max-width:900px){
-  header{
-    grid-template-columns:auto 1fr auto;
-  }
-
-  .header-actions{
-    gap:6px;
-  }
-
-  main{
-    padding:20px;
-  }
-
-  .hero{
-    grid-template-columns:1fr;
-    text-align:center;
-  }
-
-  .copy{
-    text-align:center;
-  }
-
-  .visual{
-    justify-content:center;
-    gap:16px;
-    margin-top:20px;
-  }
-
-  .laptop{
-    max-width:90%;
-  }
-
-  .phone{
-    width:120px;
-  }
-
-  .copy h1{
-    font-size:2.1rem;
-  }
-
-  .visual{
-  position:relative;
-  margin-top:16px;
-}
-
-.laptop{
-  max-width:100%;
-  transform:none;
-}
-
-.phone{
-  position:absolute;
-  right:10%;
-  bottom:-12%;
-  width:120px;
-  transform:none;
-}
-
+/* Mobile Fixes */
+@media (max-width: 900px) {
+  .hero-content, .access-grid, .referral-content { grid-template-columns: 1fr; text-align: center; }
+  .copy h1 { font-size: 2.8rem; }
+  .laptop { transform: none; margin-top: 40px; }
+  .phone { display: none; }
+  .module-row { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -250,12 +243,10 @@ main{
 
 <header>
   <div></div>
-
-  <div class="brand">
+  <a href="https://rometrics.app" class="brand">
     <img src="rometrics-logo.png" alt="ROMetrics logo">
     <span>ROMetrics</span>
-  </div>
-
+  </a>
   <div class="header-actions">
     <a href="support.html">Support</a>
     <a href="about.html">About Us</a>
@@ -264,25 +255,62 @@ main{
 </header>
 
 <main>
-  <section class="hero">
-
-    <div class="copy">
-      <h1>Clinical motion,<br>measured clearly.</h1>
-      <p>
-        A unified platform for goniometry, motion analysis, muscle testing,
-        and simulated clinical evaluation in physical therapy education.
-      </p>
-
-      <div class="actions">
-        <a href="product.html">Product Information</a>
-      </div>
+  <section class="hero-section">
+    <div class="content-wrapper hero-content">
+        <div class="copy">
+          <h1>Clinical motion,<br>measured clearly.</h1>
+          <p>The unified workspace for goniometry training, motion lab analysis, and manual muscle testing. Designed for the rigorous demands of physical therapy and kinesiology education.</p>
+          <div style="margin-top: 40px;">
+            <a href="product.html" class="cta-btn">Explore Product Details</a>
+          </div>
+        </div>
+        <div class="visual">
+          <img src="Rometrics on laptop.png" class="laptop" alt="ROMetrics on laptop">
+          <img src="Rometrics on phone.png" class="phone" alt="ROMetrics on phone">
+        </div>
     </div>
+  </section>
 
-    <div class="visual">
-      <img src="Rometrics on laptop.png" class="laptop" alt="ROMetrics on laptop">
-      <img src="Rometrics on phone.png" class="phone" alt="ROMetrics on phone">
+  <section class="access-section">
+    <div class="content-wrapper access-grid">
+        <div class="pricing-table">
+            <div class="price-row">
+                <span class="price-label">Trial Period</span>
+                <span class="price-value">1 Month Free</span>
+            </div>
+            <div class="price-row">
+                <span class="price-label">Professional Rate</span>
+                <span class="price-value">$5.99 / mo</span>
+            </div>
+            <div class="price-row">
+                <span class="price-label">Student Rate (.edu)</span>
+                <span class="price-value">$3.99 / mo</span>
+            </div>
+            <div class="price-row">
+                <span class="price-label">Card Requirement</span>
+                <span class="price-value">None for Trial</span>
+            </div>
+        </div>
+        <div class="copy">
+            <h2>Instant Access</h2>
+            <p>Start your evaluation immediately. Register using Gmail, Facebook, or your personal email address. No credit card is required to begin your 30-day full-access trial.</p>
+            <a href="register.html" class="cta-btn" style="margin-top: 24px;">Register with One Click</a>
+        </div>
     </div>
+  </section>
 
+  <section class="referral-section">
+    <div class="content-wrapper referral-content">
+        <div class="referral-text">
+            <h2>Growth & Community</h2>
+            <h3>Empower your peers.</h3>
+            <p>Mastering biomechanics is better together. Refer a colleague or classmate to the ROMetrics platform; once they sign up, you receive an additional free month added to your account automatically.</p>
+            <a href="refer.html" class="cta-btn">Refer a Colleague</a>
+        </div>
+        <div style="flex: 1; text-align: center;">
+             
+        </div>
+    </div>
   </section>
 </main>
 
@@ -295,6 +323,12 @@ main{
     <div class="module"><span>Investigate</span>Motion Forensics</div>
   </div>
 </section>
+
+<footer>
+    <div style="text-align: center; padding: 40px; color: #94a3b8; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
+        ROMetrics &copy; 2026 · Precision in Motion
+    </div>
+</footer>
 
 </body>
 </html>
