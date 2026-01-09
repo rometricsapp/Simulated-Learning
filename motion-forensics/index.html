@@ -58,6 +58,24 @@ main{
   font-size:14px;
 }
 
+.back-btn{
+  margin-top:12px;
+  background:transparent;
+  border:1px solid rgba(148,163,184,.35);
+  color:#9fb3cc;
+  padding:8px 14px;
+  border-radius:999px;
+  font-size:12px;
+  cursor:pointer;
+  transition:all .18s ease;
+}
+
+.back-btn:hover{
+  color:#e6eef7;
+  border-color:rgba(56,189,248,.6);
+  box-shadow:0 0 0 2px rgba(56,189,248,.15);
+}
+
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -116,6 +134,9 @@ main{
     <div class="header">
       <div class="title">Forensics Labs</div>
       <div class="subtitle">Select a module to begin</div>
+      <button class="back-btn" onclick="window.location.href='/'">
+        ← Return to Home
+      </button>
     </div>
 
     <div class="grid">
