@@ -47,7 +47,7 @@ main{
   width:100%;
   max-width:1200px;
   display:grid;
-  grid-template-columns: 1fr 1.2fr; /* text | devices */
+  grid-template-columns: 1fr 1.2fr;
   gap:40px;
   align-items:center;
 }
@@ -94,7 +94,7 @@ main{
   font-weight:600;
 }
 
-/* ===== DEVICES (RIGHT SIDE) ===== */
+/* ===== DEVICES ===== */
 .visual{
   display:flex;
   justify-content:flex-end;
@@ -105,11 +105,12 @@ main{
 .laptop{
   max-width:680px;
   width:100%;
+  transform: translate(270px, 0px) scale(1.06);
 }
 
 .phone{
   width:180px;
-  margin-top:60px;
+  transform: translate(-448px, 137px) scale(1.48);
 }
 
 /* ===== MOBILE ===== */
@@ -130,8 +131,11 @@ main{
     margin-top:24px;
   }
   .phone{
-    margin-top:0;
     width:160px;
+    transform:none;
+  }
+  .laptop{
+    transform:none;
   }
   .copy h1{
     font-size:2.2rem;
@@ -168,149 +172,6 @@ main{
 
   </section>
 </main>
-
-<!-- ================= DEBUG POSITION TOOL (STABLE) ================= -->
-<style>
-#dbgBtn{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  background:#2563eb;
-  color:#fff;
-  padding:10px 14px;
-  border-radius:999px;
-  font-weight:600;
-  cursor:pointer;
-  z-index:9999;
-}
-
-#dbgPanel{
-  position:fixed;
-  bottom:70px;
-  right:20px;
-  background:#020617;
-  color:#fff;
-  padding:14px;
-  border-radius:12px;
-  font-size:12px;
-  z-index:9999;
-  display:none;
-  width:260px;
-}
-
-#dbgPanel label{display:block;margin-top:10px}
-#dbgPanel input,#dbgPanel select{width:100%}
-#dbgOut{
-  margin-top:10px;
-  background:#020617;
-  padding:8px;
-  border-radius:6px;
-  font-size:11px;
-  white-space:pre;
-}
-
-#dbgSave{
-  margin-top:10px;
-  width:100%;
-  background:#22c55e;
-  color:#020617;
-  border:none;
-  padding:8px;
-  border-radius:8px;
-  font-weight:700;
-  cursor:pointer;
-}
-</style>
-
-<div id="dbgBtn">DEBUG</div>
-
-<div id="dbgPanel">
-  <strong>DEBUG MODE</strong>
-
-  <label>Target
-    <select id="dbgTarget">
-      <option value="laptop">Laptop</option>
-      <option value="phone">Phone</option>
-    </select>
-  </label>
-
-  <label>X (left / right)
-    <input type="range" id="dbgX" min="-600" max="600" value="0">
-  </label>
-
-  <label>Y (up / down)
-    <input type="range" id="dbgY" min="-600" max="600" value="0">
-  </label>
-
-  <label>Scale
-    <input type="range" id="dbgS" min="0.5" max="1.5" step="0.01" value="1">
-  </label>
-
-  <button id="dbgSave">SAVE (LOG CSS)</button>
-
-  <div id="dbgOut"></div>
-</div>
-
-<script>
-const btn   = document.getElementById('dbgBtn');
-const panel= document.getElementById('dbgPanel');
-const tgt  = document.getElementById('dbgTarget');
-const xR   = document.getElementById('dbgX');
-const yR   = document.getElementById('dbgY');
-const sR   = document.getElementById('dbgS');
-const out  = document.getElementById('dbgOut');
-const save = document.getElementById('dbgSave');
-
-let current = document.querySelector('.laptop');
-let state = { x:0, y:0, s:1 };
-
-function apply(){
-  current.style.transform =
-    `translate(${state.x}px, ${state.y}px) scale(${state.s})`;
-  out.textContent =
-`.${current.className} {
-  transform: translate(${state.x}px, ${state.y}px) scale(${state.s});
-}`;
-}
-
-btn.onclick = ()=>{
-  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-  apply();
-};
-
-tgt.onchange = ()=>{
-  current = document.querySelector('.' + tgt.value);
-  state = { x:0, y:0, s:1 };
-  xR.value = 0;
-  yR.value = 0;
-  sR.value = 1;
-  apply();
-};
-
-xR.oninput = ()=>{
-  state.x = parseInt(xR.value);
-  apply();
-};
-
-yR.oninput = ()=>{
-  state.y = parseInt(yR.value);
-  apply();
-};
-
-sR.oninput = ()=>{
-  state.s = parseFloat(sR.value);
-  apply();
-};
-
-save.onclick = ()=>{
-  console.log('FINAL CSS →\n' + out.textContent);
-  alert('Saved. Copy the CSS shown in the panel.');
-};
-</script>
-<!-- ================= END DEBUG TOOL ================= -->
-
-
-
 
 </body>
 </html>
