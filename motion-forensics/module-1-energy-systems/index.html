@@ -1458,27 +1458,6 @@ function setZone(which) {
   // snapCam() is excluded here to let OrbitControls keep your manual pan position
 }
 
-function parseFL001(md) {
-    const trials = { 'mcqs': [] }; 
-    const blocks = md.split('**Checkpoint');
-    blocks.shift(); 
-
-    blocks.forEach(block => {
-        const lines = block.split('\n').map(l => l.trim()).filter(l => l);
-        const options = lines.filter(l => /^[A-D]\./.test(l));
-        const ansMatch = block.match(/Answer.*?([A-D])/i);
-        const correctLetter = ansMatch ? ansMatch[1].toUpperCase() : null;
-
-        if (options.length > 0 && correctLetter) {
-            trials.mcqs.push({
-                q: lines[1] || "Question text error",
-                opts: options,
-                correct: correctLetter
-            });
-        }
-    });
-    return trials;
-}
 
 function showFL001Trial(trials, letter) {
     // 1. Reset Simulation State immediately on switch
@@ -1511,26 +1490,22 @@ function showFL001Trial(trials, letter) {
 
 async function enterFL001() {
     setZone('cardio');
-    
-    const res = await fetch('https://raw.githubusercontent.com/Kingto89/ROMetrics.com/main/assets/forensics_modules/module_001.md');
-    if (!res.ok) return;
 
-    const md = await res.text();
-    window.currentTrials = parseFL001(md); 
-    const trials = window.currentTrials; 
+    // No MD parsing — trials handled internally
+    window.currentTrials = { mcqs: [] };
 
-    // Wire Trial Buttons
     const btnA = document.getElementById('trialA');
     const btnB = document.getElementById('trialB');
-    
-    if (btnA) btnA.onclick = () => showFL001Trial(trials, 'A');
-    if (btnB) btnB.onclick = () => showFL001Trial(trials, 'B');
 
-    // HUD Initial state
+    if (btnA) btnA.onclick = () => showFL001Trial(window.currentTrials, 'A');
+    if (btnB) btnB.onclick = () => showFL001Trial(window.currentTrials, 'B');
+
     document.getElementById('trialTag').textContent = "-";
     document.getElementById('trialTime').textContent = "0";
-    document.getElementById('trialMsg').innerHTML = "<b>Module Loaded.</b> Select Trial A or B to begin.";
+    document.getElementById('trialMsg').innerHTML =
+      "<b>Module Loaded.</b> Select Trial A or B to begin.";
 }
+
 
 function enterModule(moduleId) {
   const mod = getModule(moduleId);
@@ -2140,7 +2115,8 @@ function triggerUnlock(msg) {
             aBtn.style.display = 'block';
             const modId = document.getElementById('moduleSelect').value || "FL-001";
             aBtn.onclick = () => { 
-window.location.href = `https://kingto89.github.io/ROMetrics.com/motion-forensics/MCQ/?module=${moduleId}&mode=review`;            };
+window.location.href = `../MCQ/?module=${moduleId}&mode=review`;  };
+
         }
     }
 }
@@ -2195,7 +2171,7 @@ $enter.addEventListener('click', async () => {
         if (reviewBtn) {
             reviewBtn.style.display = 'block';
             reviewBtn.onclick = () => {
-                const targetURL = `https://kingto89.github.io/ROMetrics.com/motion-forensics/MCQ/?module=${moduleId}`;
+                const targetURL = `../MCQ/?module=${moduleId}`;
                 // Opens in a new browser tab/window
                 window.open(targetURL, '_blank');
             };
