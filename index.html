@@ -168,23 +168,8 @@ main{
 
   </section>
 </main>
-<!-- ================= DEBUG POSITION TOOL ================= -->
+<!-- ================= DEBUG POSITION TOOL (FIXED) ================= -->
 <style>
-#debugPanel{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  background:#0f172a;
-  color:#fff;
-  padding:14px;
-  border-radius:12px;
-  font-size:12px;
-  z-index:9999;
-  display:none;
-  width:220px;
-}
-#debugPanel label{display:block;margin-top:8px}
-#debugPanel input{width:100%}
 #debugBtn{
   position:fixed;
   bottom:20px;
@@ -197,95 +182,128 @@ main{
   cursor:pointer;
   z-index:9999;
 }
-.draggable{cursor:grab}
+
+#debugPanel{
+  position:fixed;
+  bottom:70px;
+  right:20px;
+  background:#020617;
+  color:#fff;
+  padding:14px;
+  border-radius:12px;
+  font-size:12px;
+  z-index:9999;
+  display:none;
+  width:230px;
+}
+
+#debugPanel label{display:block;margin-top:8px}
+#debugPanel input,#debugPanel select{width:100%}
+
+.draggable{
+  cursor:grab;
+}
 </style>
 
 <div id="debugBtn">DEBUG</div>
 
 <div id="debugPanel">
   <strong>DEBUG MODE</strong>
+
   <label>Target
-    <select id="targetSelect">
+    <select id="dbgTarget">
       <option value="laptop">Laptop</option>
       <option value="phone">Phone</option>
     </select>
   </label>
+
   <label>Scale
-    <input type="range" id="scaleRange" min="0.5" max="1.5" step="0.01" value="1">
+    <input type="range" id="dbgScale" min="0.5" max="1.5" step="0.01">
   </label>
-  <pre id="output"></pre>
+
+  <pre id="dbgOutput"></pre>
 </div>
 
 <script>
-const debugBtn = document.getElementById('debugBtn');
+let debugOn = false;
+const btn = document.getElementById('debugBtn');
 const panel = document.getElementById('debugPanel');
-const select = document.getElementById('targetSelect');
-const scaleRange = document.getElementById('scaleRange');
-const output = document.getElementById('output');
+const targetSel = document.getElementById('dbgTarget');
+const scaleRange = document.getElementById('dbgScale');
+const output = document.getElementById('dbgOutput');
 
-let active = false;
 let current = document.querySelector('.laptop');
 
-debugBtn.onclick = () => {
-  active = !active;
-  panel.style.display = active ? 'block' : 'none';
+function getState(el){
+  return el._dbg || { x:0, y:0, s:1 };
+}
+
+function apply(el){
+  const d = getState(el);
+  el.style.transform = `translate(${d.x}px, ${d.y}px) scale(${d.s})`;
+}
+
+function log(el){
+  const d = getState(el);
+  output.textContent =
+`transform:
+translate(${Math.round(d.x)}px, ${Math.round(d.y)}px)
+scale(${d.s})`;
+  console.log(el.className, output.textContent);
+}
+
+btn.onclick = ()=>{
+  debugOn = !debugOn;
+  panel.style.display = debugOn ? 'block' : 'none';
   document.querySelectorAll('.laptop,.phone').forEach(el=>{
-    el.classList.toggle('draggable', active);
+    el.classList.toggle('draggable', debugOn);
   });
 };
 
-select.onchange = () => {
-  current = document.querySelector('.' + select.value);
-  scaleRange.value = getScale(current);
+targetSel.onchange = ()=>{
+  current = document.querySelector('.' + targetSel.value);
+  const d = getState(current);
+  scaleRange.value = d.s;
+  log(current);
 };
 
-scaleRange.oninput = () => {
-  current.style.transform = `scale(${scaleRange.value})`;
-  log();
+scaleRange.oninput = ()=>{
+  const d = getState(current);
+  d.s = parseFloat(scaleRange.value);
+  current._dbg = d;
+  apply(current);
+  log(current);
 };
-
-function getScale(el){
-  const t = el.style.transform;
-  return t.includes('scale') ? parseFloat(t.match(/scale\((.*?)\)/)[1]) : 1;
-}
-
-function log(){
-  const rect = current.getBoundingClientRect();
-  output.textContent =
-`CSS VALUES:
-margin-left: ${Math.round(rect.left)}px;
-margin-top: ${Math.round(rect.top)}px;
-transform: scale(${scaleRange.value});`;
-  console.log(select.value.toUpperCase(), output.textContent);
-}
 
 document.querySelectorAll('.laptop,.phone').forEach(el=>{
-  let isDown=false,startX,startY,origX,origY;
+  let dragging=false,startX,startY;
 
   el.onmousedown = e=>{
-    if(!active) return;
-    isDown=true;
-    startX=e.clientX;
-    startY=e.clientY;
-    origX=el.offsetLeft;
-    origY=el.offsetTop;
+    if(!debugOn) return;
+    dragging=true;
     current=el;
-    select.value=el.classList.contains('laptop')?'laptop':'phone';
-    scaleRange.value=getScale(el);
+    targetSel.value = el.classList.contains('laptop')?'laptop':'phone';
+    const d = getState(el);
+    startX = e.clientX - d.x;
+    startY = e.clientY - d.y;
+    scaleRange.value = d.s;
   };
 
   document.onmousemove = e=>{
-    if(!isDown) return;
-    el.style.position='relative';
-    el.style.left = origX + (e.clientX-startX) + 'px';
-    el.style.top  = origY + (e.clientY-startY) + 'px';
-    log();
+    if(!dragging) return;
+    const d = getState(current);
+    d.x = e.clientX - startX;
+    d.y = e.clientY - startY;
+    current._dbg = d;
+    apply(current);
+    log(current);
   };
 
-  document.onmouseup = ()=> isDown=false;
+  document.onmouseup = ()=> dragging=false;
 });
 </script>
 <!-- ================= END DEBUG TOOL ================= -->
+
 
 </body>
 </html>
