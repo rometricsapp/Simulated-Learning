@@ -7,113 +7,134 @@
 
 <style>
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-body{
-  overflow:hidden;
-  color:#fff;
-  background:
-    linear-gradient(135deg,
-      #22d3ee 0%,
-      #38bdf8 25%,
-      #2563eb 55%,
-      #1e3a8a 100%);
-}
-
-/* subtle animated gradient shift */
-body::before{
-  content:"";
-  position:fixed;
-  inset:-20%;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 45%),
-    radial-gradient(circle at 70% 60%, rgba(255,255,255,.25), transparent 50%);
-  animation: drift 18s ease-in-out infinite alternate;
-}
-
-@keyframes drift{
-  from{transform:translate(0,0)}
-  to{transform:translate(-60px,40px)}
-}
-
-header{
-  position:relative;
-  z-index:5;
-  padding:36px;
-  text-align:center;
-}
-
-header h1{
+html,body{
   margin:0;
-  font-size:2.4rem;
+  height:100%;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+
+body{
+  background:#f8fafc; /* clean athletic light */
+  color:#020617;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ===== HEADER ===== */
+header{
+  padding:32px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo{
   font-weight:800;
-  letter-spacing:-.03em;
+  font-size:1.4rem;
+  letter-spacing:-0.03em;
 }
 
-header p{
-  margin-top:8px;
-  font-size:1.05rem;
-  color:#e0f2fe;
+.cta{
+  background:#2563eb;
+  color:#fff;
+  padding:10px 18px;
+  border-radius:999px;
+  font-weight:600;
+  font-size:.9rem;
 }
 
+/* ===== HERO ===== */
 main{
-  position:relative;
-  z-index:5;
-  height:calc(100% - 140px);
+  flex:1;
   display:flex;
   align-items:center;
   justify-content:center;
+  padding:40px;
 }
 
-.devices{
+.hero{
+  max-width:1200px;
+  width:100%;
+  display:grid;
+  grid-template-columns:1fr 1.1fr;
+  gap:40px;
+  align-items:center;
+}
+
+/* ===== COPY ===== */
+.copy h1{
+  font-size:3rem;
+  line-height:1.05;
+  margin:0;
+  font-weight:800;
+  letter-spacing:-0.04em;
+}
+
+.copy p{
+  margin-top:16px;
+  font-size:1.1rem;
+  color:#475569;
+  max-width:420px;
+}
+
+.actions{
+  margin-top:28px;
+  display:flex;
+  gap:12px;
+}
+
+.primary{
+  background:#2563eb;
+  color:#fff;
+  padding:14px 22px;
+  border-radius:12px;
+  font-weight:600;
+}
+
+.secondary{
+  border:2px solid #2563eb;
+  color:#2563eb;
+  padding:12px 20px;
+  border-radius:12px;
+  font-weight:600;
+}
+
+/* ===== DEVICE AREA ===== */
+.visual{
   position:relative;
-  width:860px;
-  height:460px;
-}
-
-.device{
-  position:absolute;
-  filter:
-    drop-shadow(0 40px 80px rgba(0,0,0,.45))
-    drop-shadow(0 0 40px rgba(255,255,255,.25));
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float{
-  0%{transform:translateY(0)}
-  50%{transform:translateY(-18px)}
-  100%{transform:translateY(0)}
+  height:420px;
 }
 
 .laptop{
-  width:700px;
-  left:60px;
+  width:100%;
+  max-width:720px;
+  position:absolute;
+  left:0;
   top:40px;
-  animation-delay:-1s;
 }
 
 .phone{
-  width:190px;
+  width:160px;
+  position:absolute;
   right:40px;
-  bottom:30px;
-  animation-delay:-3s;
+  bottom:0;
 }
 
-/* mobile */
+/* ===== MOBILE ===== */
 @media (max-width:900px){
-  header h1{font-size:2rem}
-  .devices{
-    width:100%;
-    height:380px;
+  header{padding:24px}
+  .hero{
+    grid-template-columns:1fr;
+    text-align:center;
   }
-  .laptop{
-    width:92%;
-    left:4%;
-    top:60px;
+  .copy p{margin-left:auto;margin-right:auto}
+  .actions{justify-content:center}
+  .visual{
+    height:360px;
+    margin-top:20px;
   }
   .phone{
-    width:150px;
-    right:10px;
-    bottom:10px;
+    right:20px;
   }
 }
 </style>
@@ -122,15 +143,31 @@ main{
 <body>
 
 <header>
-  <h1>ROMetrics</h1>
-  <p>Precision Motion · Clinical Insight</p>
+  <div class="logo">ROMetrics</div>
+  <div class="cta">Get Early Access</div>
 </header>
 
 <main>
-  <div class="devices">
-    <img src="Rometrics on laptop.png" class="device laptop" alt="">
-    <img src="Rometrics on phone.png" class="device phone" alt="">
-  </div>
+  <section class="hero">
+
+    <div class="copy">
+      <h1>Clinical motion,<br>measured clearly.</h1>
+      <p>
+        ROMetrics helps clinicians analyze movement, strength, and performance
+        with precision tools built for real-world physical therapy.
+      </p>
+      <div class="actions">
+        <div class="primary">Explore Platform</div>
+        <div class="secondary">View Modules</div>
+      </div>
+    </div>
+
+    <div class="visual">
+      <img src="Rometrics on laptop.png" class="laptop" alt="">
+      <img src="Rometrics on phone.png" class="phone" alt="">
+    </div>
+
+  </section>
 </main>
 
 </body>
