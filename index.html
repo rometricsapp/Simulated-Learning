@@ -126,13 +126,16 @@ main{
 }
 
 .laptop{
-  max-width:640px;
+  max-width:680px;
   width:100%;
+  transform: translate(270px, 0px) scale(1.06);
 }
 
 .phone{
-  width:160px;
+  width:180px;
+  transform: translate(-448px, 137px) scale(1.48);
 }
+
 
 /* ===== MODULE DOCK ===== */
 .modules{
@@ -220,6 +223,25 @@ main{
   .copy h1{
     font-size:2.1rem;
   }
+
+  .visual{
+  position:relative;
+  margin-top:16px;
+}
+
+.laptop{
+  max-width:100%;
+  transform:none;
+}
+
+.phone{
+  position:absolute;
+  right:10%;
+  bottom:-12%;
+  width:120px;
+  transform:none;
+}
+
 }
 </style>
 </head>
