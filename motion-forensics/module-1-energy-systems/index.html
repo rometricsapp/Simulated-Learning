@@ -56,7 +56,6 @@
 <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png">
 
 </head>
-</head>
   
 <body>
 <a href="/" aria-label="Return to home"
@@ -2143,7 +2142,7 @@ function triggerUnlock(msg) {
             aBtn.style.display = 'block';
             const modId = document.getElementById('moduleSelect').value || "FL-001";
             aBtn.onclick = () => { 
-window.location.href = `../MCQ/?module=${moduleId}&mode=review`;  };
+window.location.href = `../MCQ/?module=${modId}&mode=review`; };
 
         }
     }
@@ -2199,7 +2198,7 @@ $enter.addEventListener('click', async () => {
         if (reviewBtn) {
             reviewBtn.style.display = 'block';
             reviewBtn.onclick = () => {
-                const targetURL = `../MCQ/?module=${moduleId}`;
+                const targetURL = `../MCQ/?module=${modId}`;
                 // Opens in a new browser tab/window
                 window.open(targetURL, '_blank');
             };
