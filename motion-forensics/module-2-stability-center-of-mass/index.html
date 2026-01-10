@@ -4,6 +4,9 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ROMetrics — Studio</title>
+ <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png">
 
 <style>
 html,body{height:100%;margin:0;overflow:hidden;background:#07101b;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;}
@@ -80,7 +83,11 @@ canvas{display:block}
 </head>
 
 <body>
-<div id="gate">
+<a href="/" aria-label="Return to home"
+   style="position:fixed; top:14px; left:14px; z-index:1000;">
+  <img src="/rometrics-logo.png" alt="ROMetrics" style="height:54px;">
+</a>
+	<div id="gate">
   <div id="gateCard">
     <div id="gateTitle">Forensics Labs</div>
     <div id="gateSub">Select a model to enter the studio.</div>
@@ -114,8 +121,19 @@ canvas{display:block}
 
 <div id="badge" style="position:fixed; right:14px; top:6px; z-index:100; padding:16px; border-radius:20px; border:1px solid rgba(148,163,184,.25); background:rgba(15,23,42,.85); color:#cfe3ff; font-size:13px; width:280px; backdrop-filter:blur(10px); display:none; 
     max-height: 90vh; overflow-y: auto; scrollbar-width: thin;">
-    <div style="font-weight:900; color:#38bdf8; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Stability Analysis</div>
-    
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+    <div style="font-weight:900; color:#38bdf8; text-transform:uppercase; letter-spacing:1px;">
+      Stability Analysis
+    </div>
+
+    <button class="btn"
+      onclick="window.location.href='/motion-forensics/'"
+      style="font-weight:700;">
+      ← Back
+    </button>
+  </div>
+
  <div class="field" style="margin-bottom:12px;">
     <div class="lbl">STABILITY TEST DIRECTION</div>
     <select id="dirSelect" style="width:100%; background:rgba(7,16,27,.35); border:1px solid rgba(148,163,184,.22); color:#e6eef7; border-radius:10px; padding:8px; font-size:12px;">
