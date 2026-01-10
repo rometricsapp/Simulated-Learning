@@ -2142,7 +2142,7 @@ function triggerUnlock(msg) {
             aBtn.style.display = 'block';
             const modId = document.getElementById('moduleSelect').value || "FL-001";
             aBtn.onclick = () => { 
-window.location.href = `../MCQ/?module=${modId}&mode=review`; };
+window.location.href = `../mcq/?module=${modId}&mode=review`; };
 
         }
     }
@@ -2199,7 +2199,7 @@ $enter.addEventListener('click', async () => {
             reviewBtn.style.display = 'block';
           reviewBtn.onclick = () => {
     const modId = document.getElementById('moduleSelect')?.value || "FL-001";
-    const targetURL = `../MCQ/?module=${modId}`;
+    const targetURL = `../mcq/?module=${modId}`;
     window.open(targetURL, '_blank');
 };
 
