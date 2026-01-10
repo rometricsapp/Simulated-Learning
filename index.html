@@ -67,6 +67,31 @@ header {
   text-decoration: none;
   transition: all 0.2s;
 }
+/* ===== MODULE QUICK NAV (HEADER) ===== */
+.module-nav {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex: 1;
+}
+
+.module-nav a {
+  background: rgba(34,197,94,0.08); /* subtle green */
+  color: #166534;                  /* dark green text */
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid rgba(34,197,94,0.25);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.module-nav a:hover {
+  background: rgba(34,197,94,0.18);
+  border-color: rgba(34,197,94,0.45);
+}
 
 /* ===== MAIN CONTENT ===== */
 main {
@@ -289,12 +314,23 @@ section {
     <img src="/rometrics-logo.png" alt="ROMetrics logo">
     <span>ROMetrics</span>
   </a>
+
+  <!-- CENTERED MODULE NAV -->
+  <nav class="module-nav">
+    <a href="goniometry.html">Goniometry</a>
+    <a href="motion-lab.html">Motion Lab</a>
+    <a href="mmt.html">MMT</a>
+    <a href="evaluations.html">Evaluations</a>
+    <a href="motion-forensics.html">Forensics</a>
+  </nav>
+
   <div class="header-actions">
     <a href="support.html">Support</a>
     <a href="about.html">About</a>
     <a href="signin.html">Sign In</a>
   </div>
 </header>
+
 
 <main>
 
