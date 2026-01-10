@@ -1,0 +1,2220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ROMetrics — Studio</title>
+
+<style>
+html,body{height:100%;margin:0;overflow:hidden;background:#07101b;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;}
+canvas{display:block}
+
+/* ===== Gate (UNCHANGED LAYOUT) ===== */
+#gate{
+  position:fixed;inset:0;z-index:50;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(900px 600px at 50% 35%, rgba(56,189,248,.10), rgba(7,16,27,.96));
+  backdrop-filter:blur(6px);
+}
+#gateCard{
+  width:min(740px,calc(100vw - 28px));
+  border-radius:24px;
+  border:1px solid rgba(148,163,184,.28);
+  background:rgba(9,20,37,.72);
+  box-shadow:0 20px 80px rgba(0,0,0,.40);
+  padding:22px;
+}
+#gateTitle{font-weight:950;font-size:22px;color:#e6eef7}
+#gateSub{margin-top:6px;color:#a8c0da;font-size:13px}
+#gateGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+@media(max-width:640px){#gateGrid{grid-template-columns:1fr}}
+.field{border:1px solid rgba(148,163,184,.22);border-radius:18px;background:rgba(15,23,42,.55);padding:14px}
+.field .lbl{color:#cfe3ff;font-weight:800;font-size:12px}
+.field select{
+  width:100%;margin-top:10px;
+  background:rgba(7,16,27,.35);
+  border:1px solid rgba(148,163,184,.22);
+  color:#e6eef7;border-radius:14px;
+  padding:10px 12px;font-size:14px
+}
+.field .desc{margin-top:10px;color:#a8c0da;font-size:12px;min-height:32px}
+#gateActions{display:flex;justify-content:flex-end;margin-top:16px}
+.primary{
+  border:1px solid rgba(56,189,248,.55);
+  background:rgba(56,189,248,.16);
+  color:#e6eef7;
+  padding:10px 16px;
+  border-radius:16px;
+  font-weight:900;
+  cursor:pointer
+}
+
+/* ===== Zone Pills ===== */
+#ui{
+  position:fixed;left:14px;top:14px;z-index:10;
+  display:none;gap:10px;flex-wrap:wrap
+}
+.pill{
+  border:1px solid rgba(148,163,184,.35);
+  background:rgba(15,23,42,.78);
+  color:#e5eefc;
+  padding:10px 12px;
+  border-radius:999px;
+  font-size:13px;
+  cursor:pointer
+}
+.pill.active{
+  border-color:rgba(56,189,248,.8);
+  box-shadow:0 0 0 2px rgba(56,189,248,.14) inset
+}
+</style>
+
+<script type="importmap">
+{
+  "imports":{
+    "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+<div id="gate">
+  <div id="gateCard">
+    <div id="gateTitle">Forensics Labs</div>
+    <div id="gateSub">Select a model to enter the studio.</div>
+
+    <div id="gateGrid">
+      <div class="field">
+        <div class="lbl">MODEL</div>
+        <select id="modelSelect">
+          <option value="Roma">Roma</option>
+          <option value="Roman">Roman</option>
+        </select>
+        <div class="desc" id="modelDesc">Default ROMetrics model.</div>
+      </div>
+
+      <div class="field">
+        <div class="lbl">MODULE</div>
+        <select disabled>
+          <option selected>Module 2 — Stability & Center of Mass</option>
+        </select>
+        <div class="desc">
+          Analysis Booth: postural control, base of support, and center-of-mass analysis
+        </div>
+      </div>
+    </div>
+
+    <div id="gateActions">
+      <button id="enterBtn" class="primary">Enter Studio</button>
+    </div>
+  </div>
+</div>
+
+<div id="badge" style="position:fixed; right:14px; top:6px; z-index:100; padding:16px; border-radius:20px; border:1px solid rgba(148,163,184,.25); background:rgba(15,23,42,.85); color:#cfe3ff; font-size:13px; width:280px; backdrop-filter:blur(10px); display:none; 
+    max-height: 90vh; overflow-y: auto; scrollbar-width: thin;">
+    <div style="font-weight:900; color:#38bdf8; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Stability Analysis</div>
+    
+ <div class="field" style="margin-bottom:12px;">
+    <div class="lbl">STABILITY TEST DIRECTION</div>
+    <select id="dirSelect" style="width:100%; background:rgba(7,16,27,.35); border:1px solid rgba(148,163,184,.22); color:#e6eef7; border-radius:10px; padding:8px; font-size:12px;">
+        <option value="forward">Anterior Lean (Forward)</option>
+        <option value="back">Posterior Lean (Back)</option>
+        <option value="left">Lateral Lean (Left)</option>
+        <option value="right">Lateral Lean (Right)</option>
+    </select>
+</div>
+
+<div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+    <span>Lean Intensity</span>
+    <span style="font-weight:800; color:#fff;"></span>
+</div>
+<input id="leanSlider" type="range" min="0" max="55" step="0.5" value="0" style="width:100%; accent-color:#38bdf8; margin-bottom:12px;">
+
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button id="btnSideView" style="flex:1; background:rgba(30,41,59,.8); color:#e5eefc; border:1px solid rgba(148,163,184,.3); padding:8px; border-radius:10px; cursor:pointer; font-size:11px;">Side View</button>
+        <button id="btnFrontView" style="flex:1; background:rgba(30,41,59,.8); color:#e5eefc; border:1px solid rgba(148,163,184,.3); padding:8px; border-radius:10px; cursor:pointer; font-size:11px;">Front View</button>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button id="lockBallBtn" style="flex:1.2; background:rgba(30,41,59,.8); color:#e5eefc; border:1px solid #38bdf8; padding:8px; border-radius:10px; cursor:pointer; font-size:11px;">Pick Up Ball</button>
+        <button id="toggleBaseBtn" style="flex:1; background:rgba(30,41,59,.8); color:#e5eefc; border:1px solid rgba(148,163,184,.3); padding:8px; border-radius:10px; cursor:pointer; font-size:11px;">Base Map</button>
+        <button id="resetBtn" style="flex:1; background:rgba(30,41,59,.8); color:#ffedd5; border:1px solid rgba(251,146,60,.5); padding:8px; border-radius:10px; cursor:pointer; font-size:11px;">Reset</button>
+    </div>
+
+    <div style="border-top:1px solid rgba(148,163,184,.18); padding-top:10px; margin-top:10px;">
+        <button id="reviewBtn" style="display:none; width:100%; background:transparent; border:1px solid #4ade80; color:#4ade80; padding:8px; border-radius:10px; cursor:pointer; font-size:11px; margin-bottom:8px;">Review MCQ</button>
+        
+        <button id="assessmentBtn" style="display:none; width:100%; background:#4ade80; color:#0f172a; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:700; font-size:11px;">
+            Take Final MCQ Assessment
+        </button>
+    </div>
+
+    <div id="trialMsg" style="color:#a8c0da; font-size:11px; line-height:1.25; margin-top:12px; text-align:center;">
+        Read instructions before beginning.
+    </div>
+    <button id="trialHelp" style="width: 100%; margin-top: 8px; background:transparent; border: 1px solid #38bdf8; color: #38bdf8; padding:8px; border-radius:10px; cursor:pointer; font-size:11px;">
+        View Module Instructions & Lab Guide
+    </button>
+
+    <div style="display:flex; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px solid rgba(148,163,184,.18);">
+        <div style="color:#a8c0da; font-weight:600;">Status</div>
+        <div id="statusVal" style="color:#4ade80; font-weight:800;">Stable</div>
+    </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const $enter = document.getElementById('enterBtn');
+
+
+/* ===== MODELS ===== */
+const MODEL_URLS={
+  Roma:"https://kingto89.github.io/ROMetrics.com/assets/Roma_ROMetrics.glb",
+  Roman:"https://kingto89.github.io/ROMetrics.com/assets/Roman_ROMetrics.glb"
+};
+
+/* ===== THREE SETUP ===== */
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0x07101b,10,45);
+
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,120);
+camera.position.set(6.8,3.9,8.6);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+document.body.appendChild(renderer.domElement);
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,1.35,0);
+controls.enableDamping=true;
+
+/* ===== LIGHTS ===== */
+scene.add(new THREE.AmbientLight(0x6aa0d8,.8));
+const key=new THREE.DirectionalLight(0xffffff,1.05);
+key.position.set(7,10,5);
+scene.add(key);
+
+/* ===== MATERIALS ===== */
+const matFloor=new THREE.MeshStandardMaterial({color:0x0a1a2e,roughness:.95});
+const matWall=new THREE.MeshStandardMaterial({color:0x091425,roughness:.9});
+const matDark=new THREE.MeshStandardMaterial({color:0x0b1220,roughness:.85});
+const matSteel=new THREE.MeshStandardMaterial({color:0x7a8aa0,roughness:.35,metalness:.55});
+const matBelt = new THREE.MeshStandardMaterial({color: 0x0b1018, roughness: 0.98, metalness: 0.00});
+const wallScreen = {tex: new THREE.CanvasTexture(document.createElement('canvas'))};
+const c=document.createElement('canvas'),x=c.getContext('2d');c.width=256;c.height=48;x.fillStyle='#0b1220';x.fillRect(0,0,256,48);Object.assign(x,{fillStyle:'#e6eef7',font:'600 18px system-ui',textAlign:'center',textBaseline:'middle'});x.fillText('0 mph',128,24);const consoleScreen={tex:new THREE.CanvasTexture(c)};
+
+
+    // ==============================
+    // 4) Room + zones (REAL SCALE)
+    // ==============================
+    // Room in meters
+    const ROOM_W = 14.0;
+    const ROOM_D = 11.0;
+    const WALL_H = 6.6;
+
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_W, ROOM_D), matFloor);
+    floor.rotation.x = -Math.PI/2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const room = new THREE.Group();
+
+    const wallBack = new THREE.Mesh(new THREE.BoxGeometry(ROOM_W, WALL_H, 0.30), matWall);
+    wallBack.position.set(0, WALL_H/2, -(ROOM_D/2) + 0.15);
+    wallBack.receiveShadow = true;
+    room.add(wallBack);
+
+    const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.30, WALL_H, ROOM_D), matWall);
+    wallLeft.position.set(-(ROOM_W/2) + 0.15, WALL_H/2, 0);
+    room.add(wallLeft);
+
+    const wallRight = wallLeft.clone();
+    wallRight.position.x = (ROOM_W/2) - 0.15;
+    room.add(wallRight);
+
+    const grid = new THREE.GridHelper(ROOM_W, Math.round(ROOM_W), 0x1f3b5a, 0x10243a);
+    grid.position.y = 0.01;
+    room.add(grid);
+
+    scene.add(room);
+
+    // Labels
+    let labelsOn = false;
+    const labelGroup = new THREE.Group();
+    scene.add(labelGroup);
+function roundRect(ctx, x, y, w, h, r){
+  const min = Math.min(w, h);
+  if (r > min / 2) r = min / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+
+    function makeLabel(text){
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = 'rgba(15,23,42,0.72)';
+      ctx.strokeStyle = 'rgba(56,189,248,0.65)';
+      ctx.lineWidth = 6;
+      roundRect(ctx, 14, 16, 484, 96, 26);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e6eef7';
+      ctx.font = '800 36px system-ui, -apple-system, Segoe UI, Roboto, Inter';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 34, 64);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.anisotropy = 8;
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent:true });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.85), mat);
+      mesh.renderOrder = 10;
+      return mesh;
+    }
+    function setLabels(v){
+      labelsOn = v;
+      labelGroup.traverse(o=>{ if (o.isMesh) o.visible = labelsOn; });
+    }
+    setLabels(false);
+
+    function zoneBasePlate(w, d){
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, d), new THREE.MeshStandardMaterial({ color:0x0b1a2e, roughness:0.9, metalness:0.06 }));
+      plate.receiveShadow = true;
+      return plate;
+    }
+
+/* ===== ZONES ===== */
+const Z_STRENGTH=new THREE.Vector3(-4.4,0,2.1);
+const Z_CARDIO=new THREE.Vector3(4.4,0,2.1);
+const Z_FORENSIC=new THREE.Vector3(0,0,-3.1);
+
+
+    // Strength zone (scaled realistic)
+    const zoneStrength = new THREE.Group();
+    zoneStrength.name = 'strength';
+    zoneStrength.position.copy(Z_STRENGTH);
+    const bench = new THREE.Group();
+    zoneStrength.add(bench);
+
+
+    const platS = zoneBasePlate(4.2, 3.2);
+    platS.position.set(0, 0.03, 0);
+    zoneStrength.add(platS);
+
+    // Simple bench press rack (realistic)
+    const benchTop = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.10, 0.34), matDark);
+    benchTop.position.set(0, 0.48, 0.35);
+    benchTop.castShadow = true;
+    bench.add(benchTop);
+
+    const benchLegGeo = new THREE.BoxGeometry(0.06, 0.45, 0.06);
+    [[-0.55,0.22,0.23],[0.55,0.22,0.23],[-0.55,0.22,0.47],[0.55,0.22,0.47]].forEach(p=>{
+      const l = new THREE.Mesh(benchLegGeo, matSteel);
+      l.position.set(p[0], p[1], p[2]);
+      l.castShadow = true;
+      bench.add(l);
+    });
+
+   bench.position.z += 0.5;
+
+
+    const upGeo = new THREE.BoxGeometry(0.08, 1.55, 0.08);
+    const uprL = new THREE.Mesh(upGeo, matSteel); uprL.position.set(-0.55, 0.80, -0.55); uprL.castShadow = true;
+    const uprR = uprL.clone(); uprR.position.x = 0.55;
+    zoneStrength.add(uprL, uprR);
+
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1.25,18), matSteel);
+    bar.rotation.z = Math.PI/2;
+    bar.position.set(0, 1.45, -0.55);
+    bar.castShadow = true;
+    zoneStrength.add(bar);
+
+    // Dumbbell rack (near bench, offset left so it won’t collide)
+{
+  const rack = new THREE.Group();
+  const matRubber = new THREE.MeshStandardMaterial({ color:0x121923, roughness:0.98, metalness:0.03 });
+
+  const W = 1.85, D = 0.55, H = 0.95;
+  const legGeo   = new THREE.BoxGeometry(0.06, H, 0.06);
+  const shelfGeo = new THREE.BoxGeometry(W, 0.06, 0.36);
+
+  const legs = [
+    [-W/2+0.07, H/2, -D/2+0.07],
+    [ W/2-0.07, H/2, -D/2+0.07],
+    [-W/2+0.07, H/2,  D/2-0.07],
+    [ W/2-0.07, H/2,  D/2-0.07],
+  ];
+  for (const p of legs){
+    const leg = new THREE.Mesh(legGeo, matSteel);
+    leg.position.set(p[0], p[1], p[2]);
+    leg.castShadow = true;
+    rack.add(leg);
+  }
+
+  const shelf1 = new THREE.Mesh(shelfGeo, matDark);
+  shelf1.position.set(0, 0.68, 0);
+  shelf1.rotation.x = -0.14;
+  shelf1.castShadow = true;
+  shelf1.receiveShadow = true;
+  rack.add(shelf1);
+
+  const shelf2 = new THREE.Mesh(shelfGeo, matDark);
+  shelf2.position.set(0, 0.32, 0);
+  shelf2.rotation.x = -0.14;
+  shelf2.castShadow = true;
+  shelf2.receiveShadow = true;
+  rack.add(shelf2);
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(W+0.12, 0.05, D+0.18), matDark);
+  base.position.set(0, 0.03, 0);
+  base.receiveShadow = true;
+  rack.add(base);
+
+  const handleGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.24, 16);
+  const hexGeo    = new THREE.CylinderGeometry(0.070, 0.070, 0.050, 6);
+
+  function dumbbell(scale=1){
+    const g = new THREE.Group();
+    const handle = new THREE.Mesh(handleGeo, matSteel);
+    handle.rotation.z = Math.PI/2;
+    handle.castShadow = true;
+    g.add(handle);
+
+    const wL = new THREE.Mesh(hexGeo, matRubber);
+    wL.position.x = -0.145;
+    wL.rotation.z = Math.PI/2;
+    wL.castShadow = true;
+    g.add(wL);
+
+    const wR = wL.clone();
+    wR.position.x = 0.145;
+    g.add(wR);
+
+    g.scale.setScalar(scale);
+    return g;
+  }
+
+  const xs = [-0.68, -0.34, 0.00, 0.34, 0.68];
+  xs.forEach((x,i)=>{
+    const db = dumbbell(0.92 + i*0.02);
+    db.position.set(x, 0.73, -0.06);
+    db.rotation.y = 0.08;
+    rack.add(db);
+  });
+  xs.forEach((x,i)=>{
+    const db = dumbbell(1.00 + i*0.03);
+    db.position.set(x, 0.37, -0.06);
+    db.rotation.y = 0.08;
+    rack.add(db);
+  });
+
+  // placement relative to YOUR bench (bench is around x=0, z≈0.35)
+  rack.position.set(-1.15, 0.0, 0.45);
+  rack.rotation.y = 1.60;
+
+  zoneStrength.add(rack);
+}
+
+
+    const lblS = makeLabel('Strength / Load Station');
+    lblS.position.copy(Z_STRENGTH).add(new THREE.Vector3(0, 2.7, -1.6));
+    labelGroup.add(lblS);
+
+    scene.add(zoneStrength);
+
+
+ //zone (realistic treadmill size)//
+    const zoneCardio = new THREE.Group();
+    zoneCardio.name = 'cardio';
+    zoneCardio.position.copy(Z_CARDIO);
+
+    const platC = zoneBasePlate(4.2, 3.2);
+    platC.position.set(0, 0.03, 0);
+    zoneCardio.add(platC);
+
+    const treadmill = new THREE.Group();
+    treadmill.position.set(0, 0.03, 0);
+    zoneCardio.add(treadmill);
+
+    const treadStrips = [];
+    let TREAD_MIN_Z = -0.7;
+    let TREAD_MAX_Z =  0.7;
+
+    // Real treadmill dims (meters)
+    const BELT_W = 0.55;
+    const BELT_L = 1.55;
+    const FRAME_W = 0.82;
+    const FRAME_L = 2.05;
+
+    TREAD_MIN_Z = -(BELT_L/2) + 0.10;
+    TREAD_MAX_Z =  (BELT_L/2) - 0.10;
+
+    const tmFrame = new THREE.Mesh(new THREE.BoxGeometry(FRAME_W, 0.22, FRAME_L), matDark);
+    tmFrame.position.set(0, 0.16, 0);
+    tmFrame.castShadow = true;
+    treadmill.add(tmFrame);
+
+    const tmDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(BELT_W + 0.14, 0.06, BELT_L + 0.18),
+      new THREE.MeshStandardMaterial({ color:0x0c1728, roughness:0.95, metalness:0.05 })
+    );
+    tmDeck.position.set(0, 0.26, 0);
+    tmDeck.receiveShadow = true;
+    treadmill.add(tmDeck);
+
+  const tmBelt = new THREE.Mesh(new THREE.PlaneGeometry(BELT_W, BELT_L), matBelt);
+tmBelt.rotation.x = -Math.PI/2;
+tmBelt.position.set(0, 0.296, 0); // Slight lift to avoid Z-fighting
+tmBelt.receiveShadow = true;
+treadmill.add(tmBelt);
+
+    const beltEdges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(BELT_W + 0.10, 0.02, BELT_L + 0.10)),
+      new THREE.LineBasicMaterial({ color:0x38bdf8, transparent:true, opacity:0.55 })
+    );
+    beltEdges.position.set(0, 0.305, 0);
+    beltEdges.renderOrder = 9;
+    treadmill.add(beltEdges);
+
+    const stripMat = new THREE.MeshStandardMaterial({ color: 0x1a2738, roughness: 0.95, metalness: 0.02, transparent:true, opacity:0.30 });
+    const stripCount = 12;
+    for (let i=0;i<stripCount;i++){
+      const s = new THREE.Mesh(new THREE.BoxGeometry(BELT_W - 0.04, 0.01, 0.06), stripMat);
+      s.position.set(0, 0.300, TREAD_MIN_Z + i * ((TREAD_MAX_Z - TREAD_MIN_Z) / stripCount));
+      s.renderOrder = 10;
+      treadmill.add(s);
+      treadStrips.push(s);
+    }
+
+    const rollerGeo = new THREE.CylinderGeometry(0.08, 0.08, BELT_W + 0.08, 18);
+    const rollerMat = new THREE.MeshStandardMaterial({ color:0x1a2a44, roughness:0.55, metalness:0.25 });
+    const rFront = new THREE.Mesh(rollerGeo, rollerMat);
+    rFront.rotation.z = Math.PI/2;
+    rFront.position.set(0, 0.33, -(BELT_L/2) - 0.04);
+    rFront.castShadow = true;
+    treadmill.add(rFront);
+
+    const rBack = rFront.clone();
+    rBack.position.z = (BELT_L/2) + 0.04;
+    treadmill.add(rBack);
+
+    // rails + console (front)
+    const upPole = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,1.05,16), matSteel);
+    const upX = (FRAME_W/2) - 0.10;
+    const frontZ = -(BELT_L/2) - 0.42;
+
+    const upL = upPole.clone(); upL.position.set(-upX, 0.62, frontZ); upL.castShadow = true;
+    const upR = upPole.clone(); upR.position.set( upX, 0.62, frontZ); upR.castShadow = true;
+    treadmill.add(upL, upR);
+
+    const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.032, FRAME_W - 0.10, 16), matSteel);
+    topBar.rotation.z = Math.PI/2;
+    topBar.position.set(0, 1.15, frontZ);
+    topBar.castShadow = true;
+    treadmill.add(topBar);
+
+    const sideRail = new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028, BELT_L + 0.35, 16), matSteel);
+    sideRail.rotation.x = Math.PI/2;
+    sideRail.position.set(-upX, 0.95, -0.02);
+    sideRail.castShadow = true;
+    treadmill.add(sideRail);
+
+    const sideRailR = sideRail.clone();
+    sideRailR.position.x = upX;
+    treadmill.add(sideRailR);
+
+    const tmConsole = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.40, 0.22), new THREE.MeshStandardMaterial({ color:0x111b2e, roughness:0.55, metalness:0.12 }));
+    tmConsole.position.set(0, 1.02, frontZ + 0.14);
+    tmConsole.castShadow = true;
+    treadmill.add(tmConsole);
+    
+const tmScreen = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.56, 0.30),
+ new THREE.MeshBasicMaterial({
+  map: consoleScreen.tex,
+  side: THREE.DoubleSide,
+  transparent: true,
+  depthTest: true,      // <-- IMPORTANT: allow avatar to occlude it
+  depthWrite: false,
+  toneMapped: false,
+  polygonOffset: true,  // prevents z-fighting with the console face
+  polygonOffsetFactor: -1,
+  polygonOffsetUnits: -1
+})
+);
+
+// attach to console (NOT treadmill / NOT zone)
+tmConsole.add(tmScreen);
+
+// local coords on the console front face (console depth = 0.32 -> half = 0.16)
+tmScreen.position.set(0, 0.02, 0.162);
+tmScreen.rotation.set(-0.10, 0, 0);
+
+
+
+   // Cardio zone label (kept)
+const lblC = makeLabel('Cardio Bay');
+lblC.position.copy(Z_CARDIO).add(new THREE.Vector3(0, 4.1, -1.6));
+labelGroup.add(lblC);
+
+// Add cardio zone to scene
+scene.add(zoneCardio);
+
+
+// Forensics zone (realistic)
+const zoneForensics = new THREE.Group();
+zoneForensics.name = 'forensics';
+zoneForensics.position.copy(Z_FORENSIC);
+
+const platF = zoneBasePlate(4.8, 3.6);
+platF.position.set(0, 0.03, 0);
+zoneForensics.add(platF);
+
+const lineMat = new THREE.LineBasicMaterial({ color:0x38bdf8, transparent:true, opacity:0.55 });
+const squarePts = [
+  new THREE.Vector3(-1.2, 0.065, -1.0),
+  new THREE.Vector3( 1.2, 0.065, -1.0),
+  new THREE.Vector3( 1.2, 0.065,  1.0),
+  new THREE.Vector3(-1.2, 0.065,  1.0),
+  new THREE.Vector3(-1.2, 0.065, -1.0)
+];
+zoneForensics.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(squarePts), lineMat));
+
+// --- MODULE 2 ADDITIONS START ---
+// Force Plate (Base of Support Visualization)
+const forcePlate = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.6, 0.70),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25, side: THREE.DoubleSide })
+);
+forcePlate.rotation.x = -Math.PI / 2;
+forcePlate.position.set(0, 0.07, 0); 
+forcePlate.visible = false;
+forcePlate.name = "forcePlate";
+zoneForensics.add(forcePlate);
+
+// Plumb Line (Realistic rope plumb line — NOT intersecting model)
+// Plumb Line (Realistic rope plumb line — visible & zone-relative)
+const plumbLine = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.01, 0.01, 3.0, 16),
+    new THREE.MeshStandardMaterial({
+        color: 0xb0b0b0,
+        roughness: 0.85,
+        metalness: 0.1
+    })
+);
+
+// Positioned just lateral to avatar, NOT intersecting
+plumbLine.position.set(0.6, 1.5, -0.01);
+plumbLine.visible = true;                
+plumbLine.name = "plumbLine";
+zoneForensics.add(plumbLine);
+
+
+// ==============================
+// VISUAL COM MARKER (TEACHING ONLY)
+// ==============================
+const comMarker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.06, 16, 16),
+  new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    emissive: 0xff0000,
+    emissiveIntensity: 1,
+    depthTest: false
+  })
+);
+
+comMarker.renderOrder = 999;
+
+
+comMarker.name = "comMarker";
+zoneForensics.add(comMarker);
+comMarker.position.z += 0.05; // pull COM marker forward out of torso
+
+
+
+// Weight Ball (Plumb bob — reachable floor position)
+const weightBall = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 32, 32),
+    new THREE.MeshStandardMaterial({
+        color: 0x7a8aa0,
+        metalness: 0.5,
+        roughness: 0.2
+    })
+);
+
+// Beside right foot area, on ground
+weightBall.position.set(0.6, 0.20, 1.35);
+weightBall.visible = true;
+weightBall.name = "weightBall";
+zoneForensics.add(weightBall);
+
+
+function tripod(x,z){
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,1.05,10), matSteel);
+  pole.position.y = 0.52; pole.castShadow = true; g.add(pole);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.20,0.12,0.20), matDark);
+  head.position.y = 1.05; head.castShadow = true; g.add(head);
+  const legGeo = new THREE.CylinderGeometry(0.02,0.02,0.80,8);
+  for (let i=0;i<3;i++){
+    const leg = new THREE.Mesh(legGeo, matSteel);
+    const ang = i * (Math.PI*2/3);
+    leg.position.set(Math.cos(ang)*0.18, 0.30, Math.sin(ang)*0.18);
+    leg.rotation.z = 0.55;
+    leg.rotation.y = ang;
+    g.add(leg);
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+zoneForensics.add(tripod(-1.55,-1.35), tripod(1.55,-1.35), tripod(0,1.55));
+
+const mon = new THREE.Mesh(
+  new THREE.BoxGeometry(1.55, 0.95, 0.08),
+  new THREE.MeshStandardMaterial({ color:0x111b2e, roughness:0.6, metalness:0.15 })
+);
+const mon1 = mon.clone(); mon1.position.set(-1.05, 2.35, -1.70); zoneForensics.add(mon1);
+const mon2 = mon.clone(); mon2.position.set( 1.05, 2.35, -1.70); zoneForensics.add(mon2);
+
+const lblF = makeLabel('Movement Analysis Booth');
+lblF.position.copy(Z_FORENSIC).add(new THREE.Vector3(0, 2.7, -1.6));
+labelGroup.add(lblF);
+
+scene.add(zoneForensics);
+
+// ==============================
+// TRIAL B — Reach Target
+// ==============================
+const trialBTarget = new THREE.Mesh(
+  new THREE.SphereGeometry(0.12, 16, 16),
+  new THREE.MeshStandardMaterial({
+    color: 0x22c55e,
+    emissive: 0x22c55e,
+    emissiveIntensity: 0.6
+  })
+);
+
+trialBTarget.name = "trialBTarget";
+trialBTarget.position.set(0, 0.5, -2.5); // in front of torso
+trialBTarget.visible = false;
+scene.add(trialBTarget);
+
+/* ===== ZONE CONTROL ===== */
+function setZone(z){
+  zoneStrength.visible=(z==="all"||z==="strength");
+  zoneCardio.visible=(z==="all"||z==="cardio");
+  zoneForensics.visible=(z==="all"||z==="forensics");
+}
+setZone("forensics");
+// MODULE 2 — STABILITY STATE
+// ==============================
+// Direction-specific fall risk check (Module 2)
+function checkFallRisk(){
+  if (!avatarRoot?.userData?.offset) return false;
+
+  const axis = getLeanAxis();
+
+  const comX = Math.abs(avatarRoot.userData.offset.position.x);
+  const comZ = Math.abs(avatarRoot.userData.offset.position.z);
+
+  // LATERAL (Left / Right)
+  if (axis === "lateral") {
+    const limit = sim.isWide
+      ? BOS.lateral.wide
+      : BOS.lateral.normal;
+
+    return comX > limit;
+  }
+
+  // SAGITTAL (Forward / Back)
+  return comZ > BOS.sagittal.normal;
+}
+
+
+const sim = {
+  leanZ: 0,        // forward / back
+  leanX: 0,        // left / right
+  ballLocked: false,
+  isTrembling: false,
+  reachActive: false,
+     reachAlpha: 0,
+  isBending: false,
+ isWide: false     
+};
+
+const progression = {
+    observedDirs: { forward: false, back: false, left: false, right: false },
+    trialA: { completed: false },
+    trialB: { completed: false },
+    moduleCompleted: false
+};
+
+function unlockMCQ() {
+// Save every stage of progress
+    localStorage.setItem('ROMetrics_Module2_Observed', 'true');
+    localStorage.setItem('ROMetrics_Module2_TrialA', 'true');
+    localStorage.setItem('ROMetrics_Module2_TrialB', 'true');
+    localStorage.setItem('ROMetrics_Module2_Complete', 'true');
+
+    const badge = document.getElementById('badge');
+    const assessmentBtn = document.getElementById('assessmentBtn');
+    const statusVal = document.getElementById('statusVal');
+
+    // 1. Save persistent completion state
+    localStorage.setItem('ROMetrics_Module2_Complete', 'true');
+
+    // 2. Target the 'Stability Analysis' header specifically
+    // It looks for the first div that contains the title text
+    const title = Array.from(badge.querySelectorAll('div')).find(el => el.textContent.includes('STABILITY ANALYSIS'));
+    if (title && !title.innerHTML.includes('✓')) {
+        title.innerHTML = '✓ ' + title.innerHTML;
+        title.style.color = "#4ade80"; // Turn title green to match completion
+    }
+
+    // 3. Update the button to Take/Review
+    if (assessmentBtn) {
+        assessmentBtn.style.display = "block";
+        assessmentBtn.textContent = "Take / Review MCQ Assessment";
+        assessmentBtn.onclick = () => window.open("https://kingto89.github.io/ROMetrics.com/motion-forensics/MCQ/", "_blank");
+    }
+
+    // 4. Update the bottom status
+    if (statusVal) {
+        statusVal.innerHTML = "✓ COMPLETED";
+        statusVal.style.color = "#4ade80";
+    }
+    
+    // 5. Provide final success message
+    if ($msg) $msg.innerHTML = "<b style='color:#4ade80;'>TRIAL B PASSED:</b> Base of Support widened. <b>Module Complete!</b> Take the Assessment below.";
+}
+// ==============================
+// TRIAL B — Reach With Strategy (state only)
+// ==============================
+const trialB = {
+lifting: false, // true while student is attempting lift
+canReach: false, // unlocks reach after strategy choice
+  active: false,     // trial is running
+  attempt: 0,        // 0 = baseline fail, 1 = retry after strategy
+  strategy: null,    // "widen" | "lower" | "harder"
+  resolved: false,   // locks outcome
+  bosMultiplier: 1,  // expands BOS when widened
+  comYOffset: 0,     // lowers COM when knees bend
+  comGain: 1,         // exaggerates COM when trying harder
+pose: null,        // "reach" | "bend" | "wide" | null
+tremble: false
+};
+
+const PLUMB_THRESHOLD_IDLE   = 0.025;
+const PLUMB_THRESHOLD_WEIGHT = 0.04;
+// Direction-specific Base of Support thresholds (Module 2)
+const BOS = {
+  lateral: {
+    normal: PLUMB_THRESHOLD_IDLE,
+    wide:   0.090   // widened stance increases lateral BOS only
+  },
+  sagittal: {
+    normal: PLUMB_THRESHOLD_IDLE
+  }
+};
+
+
+// ==============================
+// MODULE 2 — CONSOLE WIRING (FL-002)
+// ==============================
+
+// 1. UI References
+const leanZSlider = document.getElementById('leanSlider');
+const leanXSlider = document.getElementById('leanXSlider');
+const leanZVal    = document.getElementById('leanVal');
+const leanXVal    = document.getElementById('leanXVal');
+const ballBtn     = document.getElementById('lockBallBtn');
+const baseBtn     = document.getElementById('toggleBaseBtn');
+// reuse existing forcePlate from scene
+const forcePlateMesh = scene.getObjectByName("forcePlate");
+const $msg        = document.getElementById('trialMsg');
+const resetBtn = document.getElementById('resetBtn');
+
+if (resetBtn) {
+    resetBtn.onclick = () => {
+        // 1. Wipe all simulation flags and states
+        sim.leanZ = 0; 
+        sim.leanX = 0; 
+        sim.ballLocked = false;
+        sim.isTrembling = false;
+        sim.isBending = false;      // Wipes "Bend Knees" strategy
+        sim.isWide = false;         // Wipes "Widen Stance" strategy
+        sim.reachActive = false;
+        sim.reachAlpha = 0;
+        sim.hasSnapshot = false;    // Clears reach memory
+
+        // 2. Reset Trial B specific strategy states
+        trialB.pose = null; 
+        trialB.active = false;
+        trialB.lifting = false;
+        trialB.tremble = false;
+
+        // 3. Reset UI Elements
+        if (leanSlider) leanSlider.value = 0;
+        if (dirSelect) dirSelect.selectedIndex = 0;
+        if (ballBtn) ballBtn.textContent = "Pick Up Ball";
+        const leanValDisplay = document.getElementById('leanVal');
+        if (leanValDisplay) leanValDisplay.textContent = "0.0";
+
+        // 4. Force Reset of Avatar Posture and Height
+        if (skeleton) {
+            applyFL002Pose("idle"); // Returns to standard clinical neutral
+        }
+        
+        if (avatarRoot?.userData?.offset) {
+            // Returns COM height to standard (undoes knee-bend drop)
+            avatarRoot.userData.offset.position.set(0,0,0);
+        }
+        
+        // 5. Return Ball to Floor
+        const ball = scene.getObjectByName("weightBall");
+        if (ball) { 
+            scene.add(ball); 
+            ball.position.set(0.6, 0.20, 1.35); 
+        }
+
+        // 6. Reset Force Plate (BOS) Visualization to normal size
+        const plate = scene.getObjectByName("forcePlate");
+        if (plate) {
+            plate.scale.set(1, 1, 1);
+            plate.position.set(0, 0.07, 0);
+        }
+
+        if ($msg) $msg.innerHTML = "<b>System Reset:</b> All strategies cleared. Returned to Clinical Idle.";
+    };
+}
+// ==============================
+// TRIAL B — Direction usage tracking
+// ==============================
+const trialBDirUsed = {
+  forward: false,
+  back: false,
+  left: false,
+  right: false
+};
+
+// Trial B button (initially locked)
+// Replacement Button Row
+const trialBtnRow = document.createElement("div");
+trialBtnRow.style.cssText = "display:flex; gap:8px; margin-top:8px;";
+
+const btnStyle = "flex:1; background:transparent; border:1px solid #38bdf8; color:#38bdf8; padding:8px; border-radius:10px; cursor:pointer; font-size:11px;";
+
+const trialABtn = document.createElement("button");
+trialABtn.textContent = "Begin Trial A";
+trialABtn.style.cssText = btnStyle;
+
+const trialBBtn = document.createElement("button");
+trialBBtn.textContent = "Begin Trial B";
+trialBBtn.style.cssText = btnStyle;
+
+trialBtnRow.append(trialABtn, trialBBtn);
+document.getElementById("badge").appendChild(trialBtnRow);
+
+//temp added below  for debug//
+trialBBtn.disabled = false;
+
+
+// 3. Camera Presets (Unchanged)
+document.getElementById('btnSideView').onclick = () => {
+    camera.position.set(Z_FORENSIC.x + 3.5, 1.4, Z_FORENSIC.z);
+    controls.target.set(Z_FORENSIC.x, 1.2, Z_FORENSIC.z);
+    controls.update();
+};
+
+document.getElementById('btnFrontView').onclick = () => {
+    camera.position.set(Z_FORENSIC.x, 1.4, Z_FORENSIC.z + 4.5);
+    controls.target.set(Z_FORENSIC.x, 1.2, Z_FORENSIC.z);
+    controls.update();
+};
+
+// --- 4. Unified Slider Logic (CLEANED) ---
+if (leanSlider && dirSelect) {
+    leanSlider.oninput = e => {
+        const intensity = parseFloat(e.target.value);
+        const dir = dirSelect.value;
+        
+        // 1. Safe Display Update
+        const display = document.getElementById('leanVal');
+        if (display) display.textContent = intensity.toFixed(1);
+
+        // 2. Progression Tracking
+        if (typeof progression !== 'undefined') {
+            progression.observedDirs[dir] = true;
+            const allObserved = Object.values(progression.observedDirs).every(v => v === true);
+            
+            if (allObserved && trialABtn.disabled) {
+                trialABtn.disabled = false;
+                trialABtn.style.cursor = "pointer";
+                trialABtn.style.background = "rgba(56,189,248,.16)";
+                if ($msg) $msg.innerHTML = "<b>Observation Complete:</b> Select <b>Begin Trial A</b> to continue.";
+            }
+        }
+
+        // 3. Map Intensity
+        sim.leanX = 0;
+        sim.leanZ = 0;
+        if (dir === "forward") sim.leanZ = intensity;
+        if (dir === "back")    sim.leanZ = -intensity;
+        if (dir === "left")    sim.leanX = intensity;
+        if (dir === "right")   sim.leanX = -intensity;
+
+        // 4. Update Visual Lean
+        updateModelLean();
+
+        // 5. Strategy State Enforcement (The Fix)
+        if (trialB.active) {
+            if (sim.reachPose) applyFL002Pose("reach");
+
+            if (trialB.pose) {
+                applyTrialBPose(trialB.pose);
+                
+                // Sync the sim flags so getBalanceState "listens"
+                if (trialB.pose === "wide") {
+                    sim.isWide = true;
+                    sim.isBending = false;
+                } else if (trialB.pose === "bend") {
+                    sim.isBending = true;
+                    sim.isWide = false;
+                }
+            }
+
+            // Sync Tremble State
+            sim.isTrembling = !!trialB.tremble;
+        }
+    };
+
+    // 6. Reset slider when direction changes
+    dirSelect.onchange = () => {
+        leanSlider.value = 0;
+        const display = document.getElementById('leanVal');
+        if (display) display.textContent = "0.0";
+        
+        sim.leanX = 0;
+        sim.leanZ = 0;
+
+        if (skeleton) {
+            // Re-apply strategy pose if active, else go to idle/holding
+            if (trialB.active && trialB.pose) {
+                applyTrialBPose(trialB.pose);
+            } else {
+                applyFL002Pose(sim.ballLocked ? "holdingBall" : "idle");
+            }
+        }
+        updateModelLean();
+    };
+}
+
+function updateModelLean() {
+    if (!skeleton || !avatarRoot?.userData?.offset) return;
+
+    const radZ = THREE.MathUtils.degToRad(sim.leanZ);
+    const radX = THREE.MathUtils.degToRad(sim.leanX);
+
+    // spine visual lean ONLY
+    const spine = skeleton.bones.find(b => b.name.toLowerCase().includes("spine"));
+    if (spine) {
+        spine.rotation.x = radZ;
+        spine.rotation.z = -radX;
+    }
+
+    // normalized fraction
+    const maxDeg = Number(leanSlider?.max || 60);
+    const fZ = THREE.MathUtils.clamp(sim.leanZ / maxDeg, -1, 1);
+    const fX = THREE.MathUtils.clamp(sim.leanX / maxDeg, -1, 1);
+
+    // MOVE OFFSET NODE — NOT ROOT
+    const SHIFT = sim.ballLocked ? 0.02 : 0.015;
+    const offset = avatarRoot.userData.offset;
+
+    offset.position.x = fX * SHIFT;
+    offset.position.z = fZ * SHIFT;
+
+
+
+    // tremble flag
+sim.isTrembling = checkFallRisk();
+
+    // toes
+    skeleton.bones.forEach(b => {
+        if (b.name.toLowerCase().includes("toe")) {
+            b.rotation.x = fZ < 0 ? radZ * 0.3 : 0;
+            b.rotation.z = -radX * 0.3;
+        }
+    });
+}
+
+// Determine dominant lean axis for BOS logic
+function getLeanAxis(){
+  if (Math.abs(sim.leanX) > Math.abs(sim.leanZ)) return "lateral";
+  return "sagittal";
+}
+
+
+function updateLeftThighAbduction() {
+    if (!skeleton) return;
+
+    // Maintain your specific lean condition
+    if (sim.leanX >= 0 && Number(leanSlider.value) > 0) return;
+
+    // TARGET ONLY THE LEFT THIGH
+    const thighL = skeleton.bones.find(b => b.name === 'thigh_L');
+    if (!thighL) return;
+
+    const maxAbductionAngle = THREE.MathUtils.degToRad(5);
+    const val = Number(leanSlider.value);
+    const max = Number(leanSlider.max);
+
+    // Calculate targetZ based on current slider position
+    // As slider 'val' decreases, 'targetZ' decreases
+    const targetZ = (val / max) * maxAbductionAngle;
+
+    // Update only the Z rotation for the left thigh
+    thighL.rotation.z = THREE.MathUtils.lerp(
+        thighL.rotation.z,
+        targetZ,
+        0.1
+    );
+
+    // Hard lock other axes for this bone only
+    thighL.rotation.x = 0;
+    thighL.rotation.y = 0;
+}
+
+
+// ==============================
+// 5. Weight Ball Toggle (Hold / Release)
+// ==============================
+
+if (ballBtn) {
+    ballBtn.onclick = () => {
+        sim.ballLocked = !sim.ballLocked;
+if (trialB.active && sim.ballLocked) {
+  trialB.lifting = true;
+// TRIAL B — Reach pose trigger
+sim.reachPose = true;
+
+}
+
+        const ball = scene.getObjectByName("weightBall");
+        if (!ball || !skeleton) return;
+
+        // Target the right hand bone as the parent
+        const handBone = skeleton.bones.find(b => b.name.toLowerCase().includes('hand_r'));
+
+        if (sim.ballLocked) {
+            applyFL002Pose("holdingBall");
+	 if (trialB.active && trialB.pose) {
+        applyTrialBPose(trialB.pose); // re-assert legs immediately
+    }
+            if (handBone) {
+                // ATTACH: Move ball from global scene to the hand bone hierarchy
+                handBone.add(ball);
+                
+                // LOCAL coordinates relative to the hand bone roman -- side --out/back--up/down
+                if (window.ACTIVE_MODEL === "Roman") {
+                    // Roman: Centered in large palms
+                    ball.position.set(-0.17, 0.10, -0.01); 
+                } else {
+                    // Roma: Centered in smaller palms
+                    ball.position.set(0.0, 0.10, 0.17);
+                }
+            }
+
+            ballBtn.textContent = "Release Weight Ball";
+            if ($msg) $msg.innerHTML = "<b>LOAD ATTACHED:</b> Ball following " + window.ACTIVE_MODEL + "'s hand.";
+        } else {
+trialB.active && trialB.pose ? applyTrialBPose(trialB.pose) : applyFL002Pose("idle");
+
+            // DETACH: Return ball to the global scene root
+            scene.add(ball); 
+            
+            // WORLD coordinates for the floor
+            ball.position.set(0.6, 0.20, 1.35);
+
+            ballBtn.textContent = "Pick Up Weight Ball";
+            if ($msg) $msg.innerHTML = "<b>SYSTEM UPDATED:</b> Load returned to floor.";
+        }
+    };
+}
+
+// ==============================
+// 6. Base of Support Toggle
+// ==============================
+if (baseBtn && forcePlateMesh) {
+  baseBtn.onclick = () => {
+    forcePlateMesh.visible = !forcePlateMesh.visible;
+    baseBtn.style.borderColor = forcePlateMesh.visible ? "#38bdf8" : "";
+  };
+}
+
+// ==============================
+// 7. Module Ready Message
+// ==============================
+if ($msg) {
+  $msg.innerHTML = "<b>Module 2 Loaded:</b> Adjust lean to test stability limits.";
+}
+
+
+const STRATEGY_POSES_ROMA = {
+  bend:{
+    thigh_L:{ x:-0.55, y:-0.0022, z:-3.0616 },
+    thigh_R:{ x:-0.55, y: 0.0022, z: 3.0616 },
+    spine01:{ x:1.2, y:0.0, z:0.0 },
+    spine02:{ x:0.0, y:0.0, z:0.0 },
+    spine03:{ x:0.0, y:0.0, z:0.0 },
+    calf_L: { x:-13.5, y:0, z:0 },
+    calf_R: { x:-13.5, y:0, z:0 },
+foot_L: { x: 1.36, y: 0.0, z: 0.0 },
+    foot_R: { x: 1.36, y: 0.0, z: 0.0 }
+  },
+  wide:{
+    upperarm_L: { x: 1.3, y:  0.25, z:  -6.5 },
+    lowerarm_L: { x: 0.25, y: -0.5, z:   0.0 },
+    upperarm_R: { x: 1.3, y: -0.25, z:   6.5 },
+    lowerarm_R: { x: 0.27, y:  0.5, z:   0.0 },
+    thigh_L:{ x:-0.55, y:-0.0, z:-2.85 },
+    thigh_R:{ x:-0.55, y: 0.0, z: 2.85 },
+    spine01:{ x:0.55, y:0.0, z:0.0 },
+    spine02:{ x:0.0, y:0.0, z:0.0 },
+    spine03:{ x:0.0, y:0.0, z:0.0 },
+    calf_L: { x:-13.5, y:0, z:0 },
+    calf_R: { x:-13.5, y:0, z:0 },
+ foot_L: { x: 1.25, y: 0.0, z: 0.0 },
+    foot_R: { x: 1.25, y: 0.0, z: 0.0 }
+
+  }
+};
+
+
+
+const STRATEGY_POSES_ROMAN = {
+  bend:{
+    lowerarm_R:{ x: 0.0, y: 0.0, z: 0.0 },
+    thigh_L:{ x:-0.55, y:-0.0022, z:-3.0 },
+    thigh_R:{ x:-0.55, y: 0.0022, z: 3.0 },
+    spine01:{ x:0.39, y:0.0, z:0.0 },
+    spine02:{ x:0.0, y:0.0, z:0.0 },
+    spine03:{ x:0.5, y:0.0, z:0.0 },
+    calf_L: { x:-7.0, y:0, z:0 },
+    calf_R: { x:-7.0, y:0, z:0 }
+   
+
+  },
+  wide:{
+    thigh_L:{ x:-0.55, y:-0.0, z:-2.85 },
+    thigh_R:{ x:-0.55, y: 0.0, z: 2.85 },
+    spine01:{ x:0.0, y:0.0, z:0.0 },
+    spine02:{ x:0.0, y:0.0, z:0.0 },
+    spine03:{ x:0.0, y:0.0, z:0.0 },
+    calf_L: { x:-7.0, y:0, z:0 },
+    calf_R: { x:-7.0, y:0, z:0 },
+    foot_L: { x: 1.75, y: 0.0, z: 0.0 },
+    foot_R: { x: 1.75, y: 0.0, z: 0.0 }
+  }
+};
+
+
+// ==============================
+ //AVATAR  
+// ==============================
+// FL-002 POSES (UNCHANGED)
+// ==============================
+const FL002_POSES_ROMA = {
+  idle: {
+    upperarm_L: { x: 0.5, y:  0.12, z:  -7.2 },
+    lowerarm_L: { x: 0.0, y:  0.00, z:   0.0 },
+    hand_L:     { x: 0.0, y:  0.00, z:   0.0 },
+    thigh_L:    { x: 0.0684, y: -0.0022, z: -3.0616 },
+spine01: { x: 0, y: 0, z: 0 },
+  spine02: { x: 0, y: 0, z: 0 },
+  spine03: { x: 0, y: 0, z: 0 },
+    calf_L: { x:0.0, y:0, z:0 },
+    foot_L: { x: 1.03, y: 0.0, z: 0.0 },
+
+
+
+    upperarm_R: { x: 0.5, y: -0.12, z:   7.2 },
+    lowerarm_R: { x: 0.0, y:  0.00, z:   0.0 },
+    hand_R:     { x: 0.0, y:  0.00, z:   0.0 },
+    thigh_R:    { x: 0.0684, y:  0.0022, z:  3.0616 },
+    calf_R: { x:0.0, y:0, z:0 },
+    foot_R: { x: 1.03, y: 0.0, z: 0.0 }
+
+  },
+
+  holdingBall: {
+    // LEFT ARM
+    upperarm_L: { x: 1.3, y:  0.25, z:  -6.5 },
+    lowerarm_L: { x: 0.25, y: -0.5, z:   0.0 },
+    hand_L:     { x: 0.0, y:  0.4, z:   0.0 },
+    thigh_L:    { x: 0.0684, y: -0.0022, z: -3.0616 },
+ 
+    // RIGHT ARM
+    upperarm_R: { x: 1.3, y: -0.25, z:   6.5 },
+    lowerarm_R: { x: 0.27, y:  0.5, z:   0.0 },
+    hand_R:     { x: 0.0, y: -0.4, z:   0.0 },
+    thigh_R:    { x: 0.0684, y:  0.0022, z:  3.0616 }
+  }
+
+};
+
+const FL002_POSES_ROMAN = {
+  idle: {
+    upperarm_L: { x: 0.6, y:  0.0, z:  -1.5 },
+    lowerarm_L: { x: 0.0, y:  0.00, z:   0.0 },
+    hand_L:     { x: 0.0, y:  0.00, z:   0.0 },
+    thigh_L:    { x: -0.2001, y:  0.001,  z:  3.3 },
+  spine01: { x: 0, y: 0, z: 0 },
+  spine02: { x: 0, y: 0, z: 0 },
+  spine03: { x: 0, y: 0, z: 0 },
+
+    upperarm_R: { x: 0.6, y:  0.0, z:   1.5 },
+    lowerarm_R: { x: 0.0, y:  0.00, z:   0.0 },
+    hand_R:     { x: 0.0, y:  0.00, z:   0.0 },
+    thigh_R:    { x: -0.201,  y: -0.0011, z: -3.3 }
+  },
+
+  holdingBall: {
+    // LEFT ARM — Roman
+    upperarm_L: { x: 1.55, y:  0.0, z: -6.6 },
+    lowerarm_L: { x: 0.59, y:  0.0, z:  0.00 },
+    hand_L:     { x: 0.00, y: -1.50, z:  0.00 },
+    thigh_L:    { x: -0.2001, y:  0.001,  z:  3.1408 },
+
+
+    // RIGHT ARM — Roman
+    upperarm_R: { x: 1.55, y: -0.0, z:  6.6 },
+    lowerarm_R: { x: 0.59, y: -0.0, z:  0.00 },
+    hand_R:     { x: 0.00, y:  1.50, z:  0.00 },
+    thigh_R:    { x: -0.201,  y: -0.0011, z: -3.1407 }
+
+  }
+
+};
+
+
+
+function applyTrialBPose(strategyKey) {
+    if (!skeleton || !window.ACTIVE_MODEL) return;
+
+    // --- ADD: reset + set wide flag ---
+    sim.isWide = (strategyKey === "wide");
+
+    const set = (window.ACTIVE_MODEL === "Roman")
+        ? STRATEGY_POSES_ROMAN
+        : STRATEGY_POSES_ROMA;
+
+    const poseData = set[strategyKey];
+    if (!poseData) return;
+
+    for (const [boneName, rot] of Object.entries(poseData)) {
+        const bone = skeleton.bones.find(
+            b => b.name.toLowerCase().includes(boneName.toLowerCase())
+        );
+        if (bone) bone.rotation.set(rot.x, rot.y, rot.z);
+    }
+
+    avatarRoot.userData.offset.position.y =
+        (window.ACTIVE_MODEL === "Roman") ? -0.115 : -0.135;
+}
+
+
+function applyFL002Pose(poseName) {
+  if (!skeleton) return;
+
+  const isRoman = window.ACTIVE_MODEL === "Roman";
+  const poseSet = isRoman ? FL002_POSES_ROMAN : FL002_POSES_ROMA;
+  const pose = poseSet[poseName];
+  if (!pose) return;
+
+  for (const boneName in pose) {
+    // Case-insensitive search
+    const bone = skeleton.bones.find(b => 
+      b.name.toLowerCase().includes(boneName.toLowerCase())
+    );
+    if (!bone) continue;
+
+    const r = pose[boneName];
+    bone.rotation.set(r.x, r.y, r.z);
+  }
+}
+
+
+// --- PASTE THIS HERE (Approx Line 520) ---
+window.sim = sim;
+window.applyTrialBPose = applyTrialBPose;
+// -----------------------------------------
+
+let avatarRoot = null;
+let skeleton = null;
+
+function loadModel(id, onProgress){
+  return new Promise((resolve, reject) => {
+    const url = MODEL_URLS[id];
+    const loader = new GLTFLoader();
+
+    loader.load(
+      url,
+
+      // ✅ ON LOAD (100%)
+      (gltf) => {
+        scene.add(gltf.scene);
+avatarRoot = gltf.scene;
+const offset = new THREE.Group();
+offset.name = "avatarOffset";
+offset.position.copy(avatarRoot.position);
+
+scene.add(offset);
+offset.add(avatarRoot);
+
+// lock avatar to offset origin
+avatarRoot.position.set(0, 0, 0);
+
+// store reference
+avatarRoot.userData.offset = offset;
+
+
+// extract skeleton ONCE
+skeleton = null;
+avatarRoot.traverse(o=>{
+  if (o.isSkinnedMesh && o.skeleton && !skeleton){
+    skeleton = o.skeleton;
+  }
+});
+
+// only apply pose AFTER skeleton exists
+if (skeleton) applyFL002Pose('idle');
+
+
+        resolve(gltf);
+      },
+
+      // ✅ REAL PROGRESS (0–100)
+      (xhr) => {
+        if (xhr.total && onProgress) {
+          let pct = Math.round((xhr.loaded / xhr.total) * 100);
+pct = Math.min(100, Math.max(0, pct)); // clamp 0–100
+onProgress(pct);
+
+        }
+      },
+
+      // ❌ ERROR
+      (err) => reject(err)
+    );
+  });
+}
+
+
+function updatePlumbLineForModel() {
+    const plumbLine = scene.getObjectByName("plumbLine");
+    if (!plumbLine) return;
+
+    if (window.ACTIVE_MODEL === "Roman") {
+        // Roman-specific alignment
+        plumbLine.position.set(0.65, 1.5, -0.075);
+    } else {
+        // Roma (default)
+        plumbLine.position.set(0.65, 1.5, -0.01);
+    }
+}
+
+
+
+// 9) Enter Studio (gate -> studio)
+$enter.addEventListener('click', async () => {
+  const modelId = document.getElementById('modelSelect')?.value;
+  window.ACTIVE_MODEL = modelId; // <---  THIS LINE finds model
+  updatePlumbLineForModel();
+  const bay = document.getElementById('moduleSelect')?.value; // now treated as BAY only
+
+  $enter.disabled = true;
+  $enter.textContent = "Loading...";
+
+  try {
+await loadModel(modelId, (pct) => {
+  $enter.textContent = `Loading ${pct}%`;
+});
+
+// === FORCE SPAWN INTO FORENSICS BAY (Module 2) ===
+setZone('forensics');
+
+// Position avatar based on selected model
+if (avatarRoot) {
+    // Save the active model globally so the pose logic triggers
+    window.ACTIVE_MODEL = modelId; 
+
+    if (modelId === "Roman") {
+        // Roman: Moved forward slightly
+        avatarRoot.position.set(0, 0.08, -3.15);
+    } else {
+        // Roma: Original forensic spot
+        avatarRoot.position.set(0, 0.08, -3.15);
+    }
+}
+
+// Snap camera to forensic bay (Universal target for both)
+const camTarget = new THREE.Vector3(0, 1.35, -2.92);
+controls.target.copy(camTarget);
+camera.position.set(-0.11, 2.79, 3.02);
+controls.update();
+
+// NOW ENTER MODULE → show Module 2 console
+document.getElementById('badge').style.display = "block";
+
+// ==============================
+// TRIAL B — Strategy Buttons
+// ==============================
+const stratWrap = document.createElement("div");
+stratWrap.id = "trialBStrategies";
+stratWrap.style.display = "none";
+stratWrap.style.marginTop = "8px";
+stratWrap.style.borderTop = "1px solid rgba(148,163,184,.18)";
+stratWrap.style.paddingTop = "8px";
+
+function mkStratBtn(label, key){
+  const b = document.createElement("button");
+  b.textContent = label;
+  b.style.width = "100%";
+  b.style.marginBottom = "6px";
+  b.style.background = "rgba(30,41,59,.8)";
+  b.style.color = "#e5eefc";
+  b.style.border = "1px solid rgba(148,163,184,.3)";
+ b.style.padding = "6px"; b.style.fontSize = "10px";
+  b.style.borderRadius = "10px";
+  b.style.cursor = "pointer";
+
+  b.onclick = () => {
+    trialB.strategy = key;
+    trialB.canReach = true;
+const rBtn = document.getElementById("reachActionBtn");
+if(rBtn) rBtn.style.display = "block";
+
+    
+
+    // 2. Trigger the reach arm extension
+    sim.reachPose = true;
+    applyTrialBPose("reach");
+
+    // 3. Visual feedback for target
+    const t = scene.getObjectByName("trialBTarget");
+    if (t) {
+      t.material.emissiveIntensity = 1.2;
+    }
+
+    if (typeof $msg !== "undefined" && $msg) {
+      $msg.innerHTML = "<b>Trial B Strategy:</b> " + label + " applied. Now reach the target.";
+    }
+  };
+  return b;
+}
+
+stratWrap.appendChild(mkStratBtn("Widen Stance", "widen"));
+stratWrap.appendChild(mkStratBtn("Bend Knees", "lower"));
+stratWrap.appendChild(mkStratBtn("Try Harder", "harder"));
+const reachBtn = document.createElement("button");
+reachBtn.id = "reachActionBtn";
+reachBtn.textContent = "Perform Reach";
+reachBtn.style.cssText =   "width:100%; margin-top:6px; background:#38bdf8; color:#07101b; border:none; padding:6px; border-radius:10px; cursor:pointer; font-weight:800; font-size:10px; display:none;";
+
+reachBtn.onclick = () => {
+    trialB.lifting = true;
+    sim.reachActive = true; // Start the transition
+    if ($msg) $msg.innerHTML = "<b>Trial B:</b> Performing reach...";
+};
+stratWrap.appendChild(reachBtn);
+document.getElementById("badge")?.appendChild(stratWrap);
+
+// ==============================
+// TRIAL B — Activate baseline trial on button press
+// ==============================
+
+const stratUI = document.getElementById("trialBStrategies");
+
+function initTrial() {
+    stratUI.style.display = "block";
+    const target = scene.getObjectByName("trialBTarget");
+    const com = scene.getObjectByName("comMarker");
+    if (target) target.visible = true;
+    if (com) com.visible = true;
+    
+    // ENSURE HAND IS DOWN UNTIL BUTTON CLICK
+    sim.reachActive = false; 
+    sim.reachAlpha = 0;
+}
+
+
+
+
+// Helper to create the Reach button
+const reachBtnHTML = `<button style="width:100%; margin-top:10px; background:#4ade80; color:#0f172a; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:800; font-size:11px;" onclick="sim.reachActive=true">PERFORM REACH</button>`;
+
+trialABtn.onclick = () => {
+    initTrial();
+    stratUI.innerHTML = `
+        <button style="${btnStyle} width:100%; margin-bottom:5px;"
+            onclick="window.selectStrategy('stiff')">
+            Stiff Legs
+        </button>
+
+        <button style="${btnStyle} width:100%; margin-bottom:5px;"
+            onclick="window.selectStrategy('lower')">
+            Bend Knees
+        </button>
+
+        <button style="${btnStyle} width:100%;"
+            onclick="window.selectStrategy('toes')">
+            Stand on Toes
+        </button>
+
+        ${reachBtnHTML}
+    `;
+};
+
+trialBBtn.onclick = () => {
+    initTrial();
+    stratUI.innerHTML = `
+        <button style="${btnStyle} width:100%; margin-bottom:5px;"
+            onclick="window.selectStrategy('widen')">
+            Widen Stance
+        </button>
+
+        <button style="${btnStyle} width:100%; margin-bottom:5px;"
+            onclick="window.selectStrategy('onefoot')">
+            One Foot
+        </button>
+
+        <button style="${btnStyle} width:100%;"
+            onclick="window.selectStrategy('leanforward')">
+            Lean Forward
+        </button>
+
+        ${reachBtnHTML}
+    `;
+};
+
+
+
+// Global Logic Handler
+window.handleStrategy = function(key) {
+    if (!skeleton) return;
+    const plate = scene.getObjectByName("forcePlate");
+    
+    // 1. Reset visual feedback
+    window.sim.isTrembling = false;
+    window.sim.isBending = false;
+
+// 2. TRIAL A GATING
+if (progression.activeTrial === 'A') {
+    const isAnterior = dirSelect.value === "forward";
+    const hasReach = sim.reachActive === true;
+    const isMaxLean = Math.abs(sim.leanZ) >= leanSlider.max;
+
+    if (!isAnterior || !hasReach || !isMaxLean) {
+        alert(
+            "Trial A Requirement:\n" +
+            "• Direction must be Anterior\n" +
+            "• Hand Reach must be active\n" +
+            "• Lean Slider must be at Max"
+        );
+        return;
+    }
+
+    if (key === 'lower') {
+        progression.trialA.completed = true;
+        progression.activeTrial = null;
+        applyTrialBPose("bend");
+        sim.isBending = true;
+
+        $msg.innerHTML =
+            "<b style='color:#4ade80;'>TRIAL A PASSED:</b> Knees bent, COM lowered.";
+
+        trialBBtn.disabled = false;
+        trialBBtn.style.background = "rgba(56,189,248,.16)";
+        return;
+    }
+
+    // WRONG ANSWERS
+    if (key === 'stiff') {
+        alert("Incorrect: Stiff legs keep the COM high, reducing stability.");
+    } else if (key === 'toes') {
+        alert("Incorrect: Standing on toes reduces the BOS and causes instability.");
+    }
+
+    sim.isTrembling = true;
+    return;
+}
+
+// 3. TRIAL B GATING
+else if (progression.activeTrial === 'B') {
+    const isLateral = (dirSelect.value === "left" || dirSelect.value === "right");
+        
+    if (!sim.ballLocked || !isLateral) {
+        alert("Requirement: Pick up Ball and set direction to Lateral (Left/Right).");
+        return;
+    }
+
+    if (key === 'widen') {
+        progression.trialB.completed = true;
+        progression.activeTrial = null;
+
+        applyTrialBPose("wide");
+
+        if (plate) {
+            plate.scale.set(1.6, 0.75, 0.05);
+            plate.position.z = 0.15;
+        }
+
+        unlockMCQ();
+    } 
+    else {
+        // --- INCORRECT STRATEGY EXPLANATIONS (ADDED ONLY) ---
+        if (key === 'onefoot') {
+            alert("Incorrect: Removing one foot collapses the base of support during lateral loading.");
+        } 
+        else if (key === 'lean' || key === 'forward' || key === 'leanforward') {
+    alert("Incorrect: Leaning forward shifts the COM anteriorly instead of improving lateral stability.");
+}
+
+
+        // existing failure behavior (unchanged)
+        window.sim.isTrembling = true;
+        $msg.innerHTML =
+            "<b style='color:#ef4444;'>FAILED:</b> Incorrect strategy for Lateral Weight.";
+    }
+}
+
+
+};
+
+// Update Button Click Handlers
+trialABtn.onclick = () => {
+    progression.activeTrial = 'A';
+    initTrial();
+    stratUI.innerHTML = `
+        <div style="color:#38bdf8; font-size:10px; margin-bottom:5px; font-weight:bold;">TRIAL A: ANTERIOR STABILITY</div>
+        <button style="${btnStyle} width:100%; margin-bottom:5px;" onclick="handleStrategy('stiff')">Stiff Legs</button>
+        <button style="${btnStyle} width:100%; margin-bottom:5px;" onclick="handleStrategy('lower')">Bend Knees (Lower COM)</button>
+        <button style="${btnStyle} width:100%;" onclick="handleStrategy('toes')">Stand on Toes</button>
+        ${reachBtnHTML}
+    `;
+};
+
+trialBBtn.onclick = () => {
+    progression.activeTrial = 'B';
+    initTrial();
+    stratUI.innerHTML = `
+        <div style="color:#38bdf8; font-size:10px; margin-bottom:5px; font-weight:bold;">TRIAL B: LATERAL LOAD</div>
+        <button style="${btnStyle} width:100%; margin-bottom:5px;" onclick="handleStrategy('widen')">Widen Stance (Increase BOS)</button>
+        <button style="${btnStyle} width:100%; margin-bottom:5px;" onclick="handleStrategy('onefoot')">One Foot</button>
+        <button style="${btnStyle} width:100%;" onclick="handleStrategy('forward')">Lean Forward</button>
+        ${reachBtnHTML}
+    `;
+};
+    // Hide gate
+    document.getElementById('gate').style.display = "none";
+
+    // Show environment only (if still present)
+    const uiMain = document.getElementById('ui');
+    if (uiMain) uiMain.style.display = "flex";
+
+    // Route to bay (NO module logic)
+    switch (bay) {
+      case 'cardio':
+        setZone('cardio');
+        break;
+      case 'strength':
+        setZone('strength');
+        break;
+      case 'forensics':
+        setZone('forensics');
+        break;
+      default:
+        setZone('all');
+    }
+
+    // Optional camera snap (safe if function exists)
+    if (typeof snapCam === 'function') snapCam();
+
+  } catch (err) {
+    console.error(err);
+    $enter.disabled = false;
+    $enter.textContent = "Enter Studio";
+  }
+});
+
+function getBalanceState() {
+
+// === HARD TEACHING OVERRIDE ===
+// Wide stance + lateral lean is ALWAYS stable
+if (sim.isWide && (dirSelect.value === "left" || dirSelect.value === "right")) {
+    return sim.ballLocked ? "weighted_stable" : "idle_stable";
+}
+
+    if (!avatarRoot) return "unknown";
+
+    const leanX = sim.leanX;
+    const leanZ = sim.leanZ;
+
+    // --- ANALYTIC COM (OLD INDEX BEHAVIOR) ---
+    const SENSITIVITY = 0.004;
+    const dotX = -leanX * SENSITIVITY;
+    const dotZ =  leanZ * SENSITIVITY;
+
+    // --- VISUAL COM MARKER (RED DOT) ---
+    const com = scene.getObjectByName("comMarker");
+    if (com) {
+        let h = (window.ACTIVE_MODEL === "Roman") ? 1.08 : 0.92;
+        if (sim.isBending) h -= 0.17; // bend lowers COM
+
+        com.position.set(dotX, h, dotZ + 0.09);
+    }
+
+    // --- BASE BOS LIMITS (NORMAL STANCE) ---
+let limitX  = 0.17;
+let limitZ  = 0.17;
+let stableX = 0.10;
+let stableZ = 0.10;
+
+ 
+// --- LATERAL (X) — ONLY WIDE AFFECTS THIS ---
+if (sim.isWide) {
+    limitX  *= 3.5;
+    stableX *= 3.5;
+}
+
+// --- SAGITTAL (Z) — STRATEGIES + TASK LOAD ---
+if (sim.isWide) {
+    limitZ  *= 1.4;
+    stableZ *= 1.4;
+}
+
+if (sim.isBending) {
+    limitZ  *= 1.4;
+    stableZ *= 1.4;
+}
+
+if (sim.ballLocked) {
+    limitZ  *= 0.85;
+    stableZ *= 0.85;
+}
+
+
+    // --- ELLIPTICAL BOS CHECK ---
+    const unstable =
+        (dotX * dotX) / (limitX * limitX) +
+        (dotZ * dotZ) / (limitZ * limitZ) > 1;
+
+    const fallRisk =
+        (dotX * dotX) / (stableX * stableX) +
+        (dotZ * dotZ) / (stableZ * stableZ) > 1;
+
+    if (unstable) return sim.ballLocked ? "weighted_unstable" : "idle_unstable";
+    if (fallRisk) return "fall_risk";
+
+    return sim.ballLocked ? "weighted_stable" : "idle_stable";
+}
+
+// ==============================
+// TRIAL B — Reach Detection
+// ==============================
+function checkTrialBReach() {
+  if (!trialB.active || trialB.resolved || !trialB.canReach) return;
+
+  const target = scene.getObjectByName("trialBTarget");
+  const ball   = scene.getObjectByName("weightBall");
+  if (!target || !ball) return;
+
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  target.getWorldPosition(a);
+  ball.getWorldPosition(b);
+
+  // reach threshold (meters)
+  if (a.distanceTo(b) < 0.22) {
+    trialB.lifting = true;
+  }
+}
+
+
+/* ===== LOOP ===== */
+let _lastTime = performance.now();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = performance.now();
+  const dt = (now - _lastTime) / 1000;
+  _lastTime = now;
+
+  // ==============================
+  // UNIVERSAL BLINK LOGIC (SAFE)
+  // ==============================
+  if (!animate._blink) animate._blink = { targets: [], state: 0, t: 0, next: 0, lastModel: null };
+  const BL = animate._blink;
+
+  // 1. Auto-detect Morph Targets if model changed
+  if (avatarRoot && BL.lastModel !== avatarRoot) {
+      BL.targets = [];
+      BL.lastModel = avatarRoot;
+      BL.next = (performance.now() / 1000) + 2;
+
+      avatarRoot.traverse(o => {
+          if (o.isMesh && o.morphTargetDictionary && o.morphTargetInfluences) {
+              const keys = [
+                "Eye_Blink",
+                "Eye_Blink_L",
+                "Eye_Blink_R",
+                "Expressions_eyeClosedL_max",
+                "Expressions_eyeClosedR_max"
+              ];
+              keys.forEach(k => {
+                  if (o.morphTargetDictionary[k] != null) {
+                      BL.targets.push({ mesh: o, idx: o.morphTargetDictionary[k] });
+                  }
+              });
+          }
+      });
+  }
+
+  // 2. Execution Loop
+  if (BL.targets.length) {
+      const tNow = performance.now() / 1000;
+
+      if (BL.state === 0 && tNow >= BL.next) {
+          BL.state = 1;
+          BL.t = 0;
+          BL.next = tNow + 3 + Math.random() * 4; // 3–7s cadence
+      }
+
+      const setB = v => BL.targets.forEach(t => t.mesh.morphTargetInfluences[t.idx] = v);
+      const dur = { down: 0.07, hold: 0.03, up: 0.12 };
+
+      if (BL.state !== 0) {
+          BL.t += dt;
+
+          if (BL.state === 1) { // Closing
+              setB(Math.min(1, BL.t / dur.down));
+              if (BL.t >= dur.down) { BL.state = 2; BL.t = 0; }
+
+          } else if (BL.state === 2) { // Hold
+              setB(1);
+              if (BL.t >= dur.hold) { BL.state = 3; BL.t = 0; }
+
+          } else if (BL.state === 3) { // Opening
+              setB(1 - Math.min(1, BL.t / dur.up));
+              if (BL.t >= dur.up) { BL.state = 0; setB(0); }
+          }
+      }
+  }
+// === STATUS UPDATE (STABILITY) ===
+const state = getBalanceState();
+const el = document.getElementById("statusVal");
+
+const sliderVal = Number(leanSlider?.value || 0);
+const sliderMax = Number(leanSlider?.max || 55);
+const atMax = sliderVal >= sliderMax * 0.98;
+
+if (el) {
+  // FALL RISK = unstable AND slider max
+  if (
+    atMax &&
+    (state === "idle_unstable" || state === "weighted_unstable")
+  ) {
+    el.textContent = "Fall Risk";
+    el.style.color = "#ef4444";
+  }
+  // UNSTABLE
+  else if (
+    state === "idle_unstable" || state === "weighted_unstable"
+  ) {
+    el.textContent = "Unstable";
+    el.style.color = "#f59e0b";
+  }
+  // STABLE
+  else {
+    el.textContent = "Stable";
+    el.style.color = "#4ade80";
+  }
+}
+
+  // ==============================
+  // NORMAL RENDER FLOW
+  // ==============================
+  controls.update();
+  const balanceState = getBalanceState();  
+  checkTrialBReach();
+  const trialBLiftResult = evaluateTrialBLift();
+ 
+const isUnstable = balanceState.includes("unstable");
+sim.isTrembling = isUnstable && document.getElementById("gate")?.style.display === "none";
+
+
+// ==============================
+// FORCE BONE POSE ON LOCK
+// ==============================
+if (sim.ballLocked && skeleton) {
+  const isRoman = window.ACTIVE_MODEL === "Roman";
+  const poseSet = isRoman ? FL002_POSES_ROMAN.holdingBall : FL002_POSES_ROMA.holdingBall;
+
+  ["lowerarm_L","lowerarm_R","hand_L","hand_R"].forEach(name => {
+    const bone = skeleton.bones.find(b => b.name.toLowerCase().includes(name.toLowerCase()));
+    if (!bone || !poseSet[name]) return;
+
+    const r = poseSet[name];
+    bone.rotation.set(r.x, r.y, r.z);
+    bone.updateMatrixWorld(true);
+  });
+}
+
+
+
+if (sim.reachActive && skeleton) {
+    const armR = skeleton.bones.find(b => b.name.toLowerCase().includes("upperarm_r"));
+    const foreArmR = skeleton.bones.find(b => b.name.toLowerCase().includes("lowerarm_r"));
+
+    // 1. Capture the 'Home' rotation only once at the very start
+    if (sim.reachAlpha === 0 && !sim.hasSnapshot) {
+        sim.startRot = {
+            armZ: armR.rotation.z,
+            armX: armR.rotation.x,
+            foreX: foreArmR.rotation.x
+        };
+        sim.hasSnapshot = true;
+    }
+
+    sim.reachAlpha += 0.015;
+    if (sim.reachAlpha > 1.0) sim.reachAlpha = 1.0;
+
+    // === MODEL-SPECIFIC REACH VALUES ===
+    const ARM_Z_GAIN   = (window.ACTIVE_MODEL === "Roman") ? -1.83 : -0.7;
+    const ARM_X_GAIN   = (window.ACTIVE_MODEL === "Roman") ?  0.9 :  0.7;
+    const FOREARM_GAIN = (window.ACTIVE_MODEL === "Roman") ?  0.75 :  0.5;
+
+    if (armR && foreArmR) {
+        // 2. Apply reach from stored 'Home' pose
+        armR.rotation.z = sim.startRot.armZ + (ARM_Z_GAIN * sim.reachAlpha);
+        armR.rotation.x = sim.startRot.armX + (ARM_X_GAIN * sim.reachAlpha);
+        armR.rotation.y = 0.001; // keep locked
+
+        foreArmR.rotation.x =
+            sim.startRot.foreX + (FOREARM_GAIN * sim.reachAlpha);
+    }
+
+    if (sim.reachAlpha === 1.0) {
+        checkTrialBReach();
+        sim.hasSnapshot = false;
+    }
+}
+
+
+
+if (skeleton) {
+    const spine = skeleton.bones.find(b => b.name.toLowerCase().includes('spine'));
+    
+    if (spine) {
+        // 1. First, set the "Base" position from the sliders
+        const radZ = THREE.MathUtils.degToRad(sim.leanZ);
+        const radX = THREE.MathUtils.degToRad(sim.leanX);
+     
+
+
+        spine.rotation.x = radZ;
+        spine.rotation.z = -radX;
+
+        // 2. Only THEN apply the Tremor as a temporary offset
+        if (sim.isTrembling) {
+            spine.rotation.x += (Math.random() - 0.01) * 0.005;
+            spine.rotation.z += (Math.random() - 0.01) * 0.005;
+        }
+    }
+}
+renderer.render(scene, camera);
+}
+
+
+
+animate();
+
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+// ==============================
+// TRIAL B — Evaluate Lift Outcome
+// ==============================
+function evaluateTrialBLift() {
+  if (!trialB.active || trialB.resolved || !trialB.lifting) return null;
+
+  // must have selected a strategy
+  if (!trialB.strategy) return null;
+
+  // PASS
+  if (trialB.strategy === "widen" || trialB.strategy === "lower") {
+    trialB.resolved = true;
+sim.reachPose = false;
+
+// stop reach cue
+const t = scene.getObjectByName("trialBTarget");
+if (t) {
+  t.material.emissiveIntensity = 0.6;
+}
+
+    return "pass";
+  }
+
+  // FAIL
+  trialB.resolved = true;
+  return "fail";
+}
+
+// Check for previous completion on page load
+window.addEventListener('load', () => {
+    if (localStorage.getItem('ROMetrics_Module2_Complete') === 'true') {
+        const assessmentBtn = document.getElementById('assessmentBtn');
+        const statusVal = document.getElementById('statusVal');
+
+        if (assessmentBtn) {
+            assessmentBtn.style.display = "block";
+            assessmentBtn.textContent = "Take / Review MCQ Assessment";
+            assessmentBtn.onclick = () => window.open("https://kingto89.github.io/ROMetrics.com/motion-forensics/MCQ/", "_blank");
+        }
+
+        if (statusVal) {
+            statusVal.innerHTML = "✓ COMPLETED";
+            statusVal.style.color = "#4ade80";
+        }
+    }
+});
+
+
+</script>
+
+<div id="instrOverlay" style="position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; background:rgba(7,16,27,0.96); backdrop-filter:blur(10px); font-family:system-ui,-apple-system,sans-serif;">
+    <div style="width:min(680px, 95vw); max-height:85vh; background:#0f172a; border:1px solid rgba(56,189,248,0.4); border-radius:24px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,0.6);">
+        
+        <div style="display:flex; background:rgba(30,41,59,0.5); border-bottom:1px solid rgba(148,163,184,0.15);">
+            <div id="t-concept" style="flex:1; padding:18px; text-align:center; cursor:pointer; font-size:11px; font-weight:900; color:#38bdf8; text-transform:uppercase; letter-spacing:1px; background:rgba(56,189,248,0.1); box-shadow:inset 0 -3px 0 #38bdf8;" onclick="switchLabTab('concept')">Concept</div>
+            <div id="t-guide" style="flex:1; padding:18px; text-align:center; cursor:pointer; font-size:11px; font-weight:900; color:#a8c0da; text-transform:uppercase; letter-spacing:1px;" onclick="switchLabTab('guide')">Trial Guide</div>
+            <div id="t-instr" style="flex:1; padding:18px; text-align:center; cursor:pointer; font-size:11px; font-weight:900; color:#a8c0da; text-transform:uppercase; letter-spacing:1px;" onclick="switchLabTab('instr')">Instructions</div>
+        </div>
+
+        <div id="labContent" style="padding:32px; overflow-y:auto; color:#cfe3ff; font-size:14px; line-height:1.6;">
+            
+            <div id="p-concept" style="display:block;">
+                <h4 style="margin:0 0 14px 0; color:#38bdf8; text-transform:uppercase; font-size:15px;">How Balance Works</h4>
+                
+                <p>Think of your body like a tower of blocks. To keep the tower from falling, the weight of the blocks must stay directly over the base.</p>
+
+                <h4 style="margin:20px 0 10px 0; color:#38bdf8; text-transform:uppercase; font-size:13px;">1. The Red Dot and the Blue Plate</h4>
+                <p>The <b>Red Dot (Center of Mass)</b> is where your body's weight is focused. The blue <b>Force Plate (Base of Support)</b> is the "safety zone" on the floor.</p>
+                
+                
+
+                <ul style="padding-left:18px;">
+                    <li><b>Stable:</b> If the Red Dot is over the blue plate, the floor can hold you up.</li>
+                    <li><b>Unstable:</b> If the Red Dot moves past the edge of the blue plate, there is no floor left to support you. You will tip over.</li>
+                </ul>
+
+                <h4 style="margin:20px 0 10px 0; color:#38bdf8; text-transform:uppercase; font-size:13px;">2. Fixed Plumb Line (Gravity)</h4>
+                <p>The <b>Fixed Plumb Line</b> represents gravity. It never moves. In clinical practice, we use this to see how far your body moves away from a straight vertical line.</p>
+
+                <h4 style="margin:20px 0 10px 0; color:#38bdf8; text-transform:uppercase; font-size:13px;">3. Improving Stability</h4>
+                <p>To stay balanced during movement, you must use a strategy that keeps the Red Dot inside the Blue Plate. This can be done by changing how you stand or how you move your body.</p>
+                
+                
+
+                <p style="margin-top:15px; font-weight:bold; color:#fbbf24;">Observation: Before starting a trial, use the sliders to see how the Red Dot moves relative to the blue plate boundaries.</p>
+            </div>
+
+            <div id="p-guide" style="display:none;">
+                <h4 style="margin:0 0 14px 0; color:#38bdf8; text-transform:uppercase; font-size:15px;">Trial Guide</h4>
+                
+                <div style="margin-bottom:24px; padding:15px; background:rgba(30,41,59,0.3); border-radius:12px; border:1px solid rgba(148,163,184,0.1);">
+                    <b style="color:#fff; text-transform:uppercase; font-size:12px; display:block; margin-bottom:10px;">🔹 Trial A — Anterior Stability (Body Only)</b>
+                    <p style="font-size:13px; margin:0;"><b>Goal:</b> Determine how COM affects stability during an anterior task.</p>
+                    <p style="font-size:13px; margin:8px 0;"><b>Setup (must be completed before strategy selection):</b></p>
+                    <ul style="font-size:13px; margin:0; padding-left:18px;">
+                        <li>Subject stands on the Force Plate <b>without the ball</b></li>
+                        <li>Set <b>Direction</b> to <b>Anterior</b></li>
+                        <li>Move the <b>Forward Reach / Lean slider to maximum</b></li>
+                        <li>Activate <b>Hand Reach</b></li>
+                    </ul>
+                    <p style="font-size:13px; margin:8px 0 0 0;">Incorrect strategies result in a <b>stability breach</b> with an explanation.</p>
+                </div>
+
+                <div style="padding:15px; background:rgba(30,41,59,0.3); border-radius:12px; border:1px solid rgba(148,163,184,0.1);">
+                    <b style="color:#fff; text-transform:uppercase; font-size:12px; display:block; margin-bottom:10px;">🔹 Trial B — Lateral Stability (Load Added)</b>
+                    <p style="font-size:13px; margin:0;"><b>Goal:</b> Determine how adjusting BOS during lateral loading helps to maintain stability.</p>
+                    <p style="font-size:13px; margin:8px 0;"><b>Setup (must be completed before strategy selection):</b></p>
+                    <ul style="font-size:13px; margin:0; padding-left:18px;">
+                        <li>Subject <b>picks up the weighted ball</b></li>
+                        <li>Set <b>Direction</b> to <b>Left or Right</b></li>
+                        <li>Move the <b>Forward Reach / Lean slider to maximum</b></li>
+                    </ul>
+                    <p style="font-size:13px; margin:8px 0 0 0;">Incorrect strategies explain why lateral stability fails.</p>
+                </div>
+            </div>
+
+            <div id="p-instr" style="display:none;">
+                <h4 style="margin:0 0 14px 0; color:#38bdf8; text-transform:uppercase; font-size:15px;">Module Instructions</h4>
+                <ul style="padding-left:18px; margin:0 0 20px 0;">
+                    <li><b>Run Observation:</b> Before choosing a strategy, use the lean sliders to see where the <b>Red Dot</b> moves. Understand the limits of the <b>Blue Plate</b> first.</li>
+                    <li><b>Goal:</b> You must reach the <b>Green Dot</b> (target) while remaining stable.</li>
+                    <li><b>Stable Status:</b> Confirmation is automatic. If your body mechanics are correct, status will show "Stable."</li>
+                    <li><b>Reset:</b> Use the Reset button to return to a neutral posture between trials.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="padding:20px; border-top:1px solid rgba(148,163,184,0.15); display:flex; justify-content:flex-end; background:rgba(15,23,42,0.6);">
+            <button style="border:1px solid #38bdf8; background:rgba(56,189,248,0.2); color:#fff; padding:12px 32px; border-radius:14px; font-weight:900; cursor:pointer; font-size:12px; text-transform:uppercase;" onclick="document.getElementById('instrOverlay').style.display='none'">Begin Lab</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchLabTab(pane) {
+        const panes = ['concept', 'guide', 'instr'];
+        panes.forEach(p => {
+            document.getElementById('p-' + p).style.display = p === pane ? 'block' : 'none';
+            const tab = document.getElementById('t-' + p);
+            tab.style.color = p === pane ? '#38bdf8' : '#a8c0da';
+            tab.style.background = p === pane ? 'rgba(56,189,248,0.1)' : 'none';
+            tab.style.boxShadow = p === pane ? 'inset 0 -3px 0 #38bdf8' : 'none';
+        });
+    }
+
+    (function() {
+        const enterBtn = document.getElementById('enterBtn');
+        const helpBtn = document.getElementById('trialHelp');
+        const overlay = document.getElementById('instrOverlay');
+
+        if (enterBtn) {
+            enterBtn.addEventListener('click', () => {
+                setTimeout(() => { overlay.style.display = 'none'; }, 800);
+            });
+        }
+        if (helpBtn) {
+            helpBtn.onclick = () => { overlay.style.display = 'flex'; };
+        }
+    })();
+</script>
+</body>
+</html>
