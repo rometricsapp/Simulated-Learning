@@ -417,18 +417,19 @@ const CASE_FILES = {
 
 
   //DROP IN START//
-  const ROUTES = {
-    // we’re using token URLs from the old logic for CASE 001
-    motion: "https://kingto89.github.io/ROMetrics.com/lab-motion/?caseToken=LAB-CERVICAL-001",
-    gonio:  "https://kingto89.github.io/ROMetrics.com/goniometry-trainer/?caseToken=GONIO-CERVICAL-001",
-    mmt:    "https://kingto89.github.io/ROMetrics.com/mmt/?caseToken=MMT-CERVICAL-001",
-    notes:  "#soap" // handled inside openRoute, not a real URL
-  };
-    const CASE_GONIO_URLS = {
-    "CASE_001": "https://kingto89.github.io/ROMetrics.com/goniometry-trainer/?caseToken=GONIO-CERVICAL-001",
-    "CASE_002": "https://kingto89.github.io/ROMetrics.com/goniometry-trainer/?caseToken=GONIO-HIP-002",
-    "CASE_003": "https://kingto89.github.io/ROMetrics.com/goniometry-trainer/?caseToken=GONIO-CLUSTER-003"
-  };
+const ROUTES = { 
+  // token URLs preserved
+  motion: "/lab-motion/?caseToken=LAB-CERVICAL-001",
+  gonio:  "/goniometry-trainer/?caseToken=GONIO-CERVICAL-001",
+  mmt:    "/mmt/?caseToken=MMT-CERVICAL-001",
+  notes:  "#soap" // handled inside openRoute, not a real URL
+};
+
+const CASE_GONIO_URLS = {
+  "CASE_001": "/goniometry-trainer/?caseToken=GONIO-CERVICAL-001",
+  "CASE_002": "/goniometry-trainer/?caseToken=GONIO-HIP-002",
+  "CASE_003": "/goniometry-trainer/?caseToken=GONIO-CLUSTER-003"
+};
 
 
   function getCurrentCaseKey(){
@@ -475,11 +476,12 @@ function openRoute(key) {
 
     if (key === "motion") {
         const caseKey = getCurrentCaseKey();
-        const CASE_MOTION_URLS = {
-            "CASE_001": "https://kingto89.github.io/ROMetrics.com/lab-motion/index.html?caseToken=LAB-CERVICAL-001",
-            "CASE_002": "https://kingto89.github.io/ROMetrics.com/lab-motion/index.html?caseToken=LAB-HIP-002",
-            "CASE_003": "https://kingto89.github.io/ROMetrics.com/lab-motion/index.html?caseToken=LAB-CLUSTER-003"
-        };
+       const CASE_MOTION_URLS = {
+  "CASE_001": "/lab-motion/?caseToken=LAB-CERVICAL-001",
+  "CASE_002": "/lab-motion/?caseToken=LAB-HIP-002",
+  "CASE_003": "/lab-motion/?caseToken=LAB-CLUSTER-003"
+};
+
 
         const url = CASE_MOTION_URLS[caseKey]; // Fallback removed
 
@@ -523,10 +525,11 @@ function openRoute(key) {
         const caseKey = getCurrentCaseKey();
 
         const CASE_MMT_URLS = {
-            "CASE_001": "https://kingto89.github.io/ROMetrics.com/mmt/?caseToken=MMT-CERVICAL-001",
-            "CASE_002": "https://kingto89.github.io/ROMetrics.com/mmt/?caseToken=MMT-HIP-002",
-            "CASE_003": "https://kingto89.github.io/ROMetrics.com/mmt/?caseToken=MMT-CLUSTER-003"
-        };
+  "CASE_001": "/mmt/?caseToken=MMT-CERVICAL-001",
+  "CASE_002": "/mmt/?caseToken=MMT-HIP-002",
+  "CASE_003": "/mmt/?caseToken=MMT-CLUSTER-003"
+};
+
 
         const url = CASE_MMT_URLS[caseKey]; // Fallback removed
 
