@@ -253,7 +253,7 @@ select,button,input[type=range]{width:100%;margin:6px 0 8px 0;padding:8px 10px;b
 </div>
 <script>
   // Use your live model path (uploaded in your repo)
-  window.ROMETRICS_MODEL_URL = "https://kingto89.github.io/ROMetrics.com/assets/Roma_ROMetrics.glb";
+window.ROMETRICS_MODEL_URL = "/assets/Roma_ROMetrics.glb";
 </script>
 
 <script type="module">
@@ -1593,7 +1593,7 @@ let GLOBAL_PF_DEG = 0; // shared plantarflex angle for both feet
 let currentHoldAngle = 0; // NEW: Tracks rotation during MMT resistance hold
   
 // ADDED: Hands model loading variables
-const HANDS_MODEL_URL = "https://raw.githubusercontent.com/Kingto89/ROMetrics.com/main/assets/Hands.glb";
+const HANDS_MODEL_URL = "/assets/Hands.glb";
 let handsModel = null;
   
 // Reset all bones back to stored baseline
@@ -3022,8 +3022,9 @@ const tabLow    = document.getElementById('tabLow');  // 0–2
 const closeNote = document.getElementById('closeNote');
 
 // GitHub RAW URLs for the two docs
-const MD_HIGH = "https://raw.githubusercontent.com/Kingto89/ROMetrics.com/main/mmt/rometrics_mmt_threetofive.md";
-const MD_LOW  = "https://raw.githubusercontent.com/Kingto89/ROMetrics.com/main/mmt/rometrics_mmt_zerototwo.md";
+const MD_HIGH = "/mmt/rometrics_mmt_threetofive.md";
+const MD_LOW  = "/mmt/rometrics_mmt_zerototwo.md";
+
 
 // Map select values to readable headings to find in MD
 const TEST_TO_HEADING = {
