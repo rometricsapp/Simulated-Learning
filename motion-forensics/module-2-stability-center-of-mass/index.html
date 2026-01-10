@@ -190,10 +190,11 @@ const $enter = document.getElementById('enterBtn');
 
 
 /* ===== MODELS ===== */
-const MODEL_URLS={
-  Roma:"https://kingto89.github.io/ROMetrics.com/assets/Roma_ROMetrics.glb",
-  Roman:"https://kingto89.github.io/ROMetrics.com/assets/Roman_ROMetrics.glb"
+const MODEL_URLS = {
+  Roma: "/assets/Roma_ROMetrics.glb",
+  Roman: "/assets/Roman_ROMetrics.glb"
 };
+
 
 /* ===== THREE SETUP ===== */
 const scene=new THREE.Scene();
@@ -802,7 +803,8 @@ function unlockMCQ() {
     if (assessmentBtn) {
         assessmentBtn.style.display = "block";
         assessmentBtn.textContent = "Take / Review MCQ Assessment";
-        assessmentBtn.onclick = () => window.open("https://kingto89.github.io/ROMetrics.com/motion-forensics/MCQ/", "_blank");
+assessmentBtn.onclick = () =>
+  window.open("/motion-forensics/mcq/", "_blank");
     }
 
     // 4. Update the bottom status
@@ -2111,7 +2113,8 @@ window.addEventListener('load', () => {
         if (assessmentBtn) {
             assessmentBtn.style.display = "block";
             assessmentBtn.textContent = "Take / Review MCQ Assessment";
-            assessmentBtn.onclick = () => window.open("https://kingto89.github.io/ROMetrics.com/motion-forensics/MCQ/", "_blank");
+assessmentBtn.onclick = () =>
+  window.open("/motion-forensics/mcq/", "_blank");
         }
 
         if (statusVal) {
