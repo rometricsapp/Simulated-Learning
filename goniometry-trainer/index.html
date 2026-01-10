@@ -1,1 +1,3264 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Goniometry Trainer </title>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<style>
+:root{--bg:#0b1220;--panel:#0f172a;--line:#1f2937;--ctrl:#1e293b;--text:#e2e8f0;--muted:#cbd5e1}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden;font-family:system-ui,Segoe UI,Roboto}
+  .lockOn{background:#0b3a1f;border-color:#16a34a}
+   .hide{display:none}.lockOn{background:#0b3a1f;border-color:#16a34a}
+    select,button,input[type=range]{width:100%;margin:6px 0 8px 0;padding:8px 10px;border-radius:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0}
+  .row{display:flex;gap:8px}.row>button{flex:1}
+  .pill{display:flex;flex-direction:column;align-items:center;gap:4px;border:2px solid #334155;border-radius:12px;padding:8px 6px;line-height:1}
+  .pill .top{display:flex;align-items:center;gap:6px;font-weight:700}
+  .pill .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+  .pill.orange{border-color:#f59e0b}.pill .dot.orange{background:#f59e0b}
+  .pill.red{border-color:#ef4444}.pill .dot.red{background:#ef4444}
+  .pill.green{border-color:#22c55e}.pill .dot.green{background:#22c55e}
+  .pill .label{font-size:12px;color:#cbd5e1}
+   .hud,.toast,#msg{z-index:40}
+  .hud{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.75);border:1px solid #334155;border-radius:10px;padding:6px 10px;font-weight:700;backdrop-filter:blur(6px)}
+  .toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(2,6,23,.7);border:1px solid #334155;border-radius:10px;padding:6px 10px;font-size:13px;display:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+.panel{position:fixed;left:25px;top:12px;width:360px;max-height:90vh;z-index:100;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.4);display:flex;flex-direction:column;overflow:hidden}
+.dragbar{cursor:move;background:#0c1628;border-bottom:1px solid #162235;padding:8px 12px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dragbar .hint{margin-left:auto;font-size:12px;color:#9fb0c9}
+.content{padding:12px;overflow:auto}
+label{display:block;font-size:12px;margin-top:8px;color:var(--muted)}
+select,button,input[type=range]{width:100%;margin:6px 0 8px 0;padding:8px 10px;border-radius:10px;background:var(--ctrl);border:1px solid #334155;color:#e2e8f0}
+.row{display:flex;gap:8px}.row>button{flex:1}
+.mini{padding:6px 10px;border-radius:8px;background:var(--ctrl);border:1px solid #334155}
+details{border:1px solid #162235;border-radius:10px;padding:8px;background:#0b1426;margin-top:8px}
+summary{cursor:pointer;font-weight:600;color:#dbe7ff}
+#log{background:#0b1220;border:1px solid #1f2937;min-height:90px;max-height:130px;overflow:auto;border-radius:8px;padding:8px;font-size:12px;white-space:pre-wrap}
+#msg{position:fixed;bottom:10px;left:12px;background:rgba(15,23,42,.75);border:1px solid #334155;border-radius:8px;padding:6px 10px;font-size:12px;z-index:25}
+optgroup{color:#9fb0c9;font-style:normal}
+.modal{position:fixed;right:16px;bottom:16px;width:min(420px,50vw);max-height:78vh;z-index:30;background:rgba(8,13,26,.96);border:1px solid #334155;border-radius:12px;backdrop-filter:blur(6px);display:none;flex-direction:column;overflow:hidden}
+.modal.on{display:flex}
+.modal .top{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #1f2a40;background:#0c1628}
+.modal .top h4{margin:0;font-size:14px}
+.modal .x{margin-left:auto;background:transparent;border:0;color:#9fb0c9;font-size:18px;cursor:pointer}
+.modal .body{padding:12px;overflow:auto}
+.rom-item{border:1px solid #2a3a55;border-radius:10px;background:#101a2e;margin:8px 0;}
+.rom-item summary{padding:10px 12px;list-style:none;cursor:pointer}
+.rom-item summary::-webkit-details-marker{display:none}
+.rom-item .inner{padding:8px 12px;border-top:1px solid #1c2941}
+.rom-row{display:flex;gap:10px;font-size:13px;padding:4px 0}
+.rom-row input[type=number]{
+  height:22px;           /* match Cervical Rot box height */
+  font-size:12px;
+  padding:2px 4px;
+  box-sizing:border-box;
+}
+.rom-head{width:160px;color:#9fb0c9}
+.badge{display:inline-block;padding:2px 6px;border-radius:6px;border:1px solid #2a3a55;background:#132038;color:#cbd5e1;font-size:11px;margin-left:6px}
+#boneAdv { display:none !important; }
+  /* SVG */
+  #gonioHost{position:fixed; inset:0; z-index:10; pointer-events:none}
+  #gonioHost svg{width:100vw;height:100vh;background:transparent;pointer-events:none}
+  .tick{stroke:#64748b;stroke-width:.9}.tickBig{stroke-width:1.6}
+  .labelOuter{fill:#e5e7eb;font-size:11px;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#0b1220;stroke-width:3px}
+  .labelInner{fill:#fca5a5;font-size:8.2px;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#0b1220;stroke-width:3px}
+  .rulerTick{stroke:#94a3b8}
+  .ruLbl{fill:#cbd5e1;font-size:9.5px;dominant-baseline:middle;paint-order:stroke;stroke:#0b1220;stroke-width:3px}
+  .scrLine{stroke-width:2.2; stroke-linecap:round}
+
+  /* Cursors */
+  #instrument{cursor:move}
+  #armB_handleKnob,#armB_handleShaft,#armB_knob{cursor:grab}
+  /* --- NO JUMP SLIDERS --- */
+
+/* 1. Disable clicks on the slider track */
+input[type=range] {
+  pointer-events: none; 
+}
+
+/* 2. Re-enable clicks/drags ONLY on the thumb (handle) */
+input[type=range]::-webkit-slider-thumb {
+  pointer-events: auto;
+  cursor: grab;
+}
+input[type=range]::-moz-range-thumb {
+  pointer-events: auto;
+  cursor: grab;
+}
+/* --- THICKER SLIDERS + BLUE FILL + NO PAGE SWIPE (Linear) --- */
+input[type=range] { touch-action: none; -webkit-appearance: none; appearance: none; height: 24px; background: #334155; border-radius: 12px; overflow: hidden; margin: 10px 0; padding: 0; border: 0; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: #e2e8f0; border-radius: 50%; border: 2px solid #0f172a; box-shadow: -100vw 0 0 100vw #3b82f6; cursor: grab; pointer-events: auto; }
+input[type=range]::-moz-range-thumb { width: 24px; height: 24px; background: #e2e8f0; border-radius: 50%; border: 2px solid #0f172a; box-shadow: -100vw 0 0 100vw #3b82f6; cursor: grab; pointer-events: auto; }
+</style>
+</head>
+<body>
+
+  <div class="hud" id="hud">Angle: 0°</div>
+  <div class="toast" id="toast">Preset updated</div>
+  
+  <!-- Panel -->
+<div class="panel" id="panel">
+  <div class="dragbar" id="dragbar">
+    <img src="../assets/rometrics-logo.png" style="height:28px; width:auto; vertical-align:middle; margin-right:8px;" alt="">Goniometry Trainer <span class="hint">drag me</span>
+  </div>
+  <div class="content">
+    <div class="row" style="align-items:center">
+      <label style="display:flex;gap:6px;align-items:center;margin:0;">
+      </label>
+    </div>
+
+<div class="row" style="gap:15px">
+  <div style="flex:1;">
+    <label>Model</label>
+    <select id="modelSel">
+      <option value="Roma">Roma</option>
+      <option value="Roman">Roman</option>
+    </select>
+  </div>
+
+  <div style="flex:1;">
+    <label>Position</label>
+    <select id="positionSel">
+      <option value="standing">Standing (Default)</option>
+      <option value="supine">Supine (Face Up)</option>
+      <option value="prone">Prone (Face Down)</option>
+      <option value="sitting">Sitting</option>
+    </select>
+  </div>
+</div>
+
+
+
+<div class="row" style="gap:15px">
+  <div style="flex:1;">
+    <label>Body Region</label>
+    <select id="regionSel">
+      <option value="">(Select region…)</option>
+      <option value="cervical_spine">Cervical Spine</option>
+      <option value="thoracic_lumbar_spine">Thoracic & Lumbar Spine</option>
+      <option value="glenohumeral_joint">Glenohumeral Joint</option>
+      <option value="elbow_radioulnar">Elbow & Radioulnar Joints</option>
+      <option value="wrist">Wrist</option>
+      <option value="hip">Hip</option>
+      <option value="knee">Knee</option>
+      <option value="talocrural_ankle">Talocrural (Ankle)</option>
+      <option value="transverse_tarsal_subtalar">Transverse Tarsal & Subtalar</option>
+    </select>
+  </div>
+
+  <div style="flex:1;">
+    <label>Action</label>
+    <select id="actionSel"></select>
+  </div>
+</div>
+
+  
+
+      <label><span id="pairLabel">Angle (°)</span></label>
+      <input type="range" id="actionDeg" min="-90" max="150" step="1" value="0" style="display:none">
+      <div class="row">
+      <button id="autoMoveBtn" class="mini">Run Action</button>
+      <button id="showNote" class="mini">📌 Goniometer Placement</button>
+      </div>
+  
+  <div class="row">
+    <button class="pill orange" id="pickFulcrum">
+      <div class="top"><span class="dot orange"></span><span>1</span></div>
+      <div class="label">Fulcrum</div>
+    </button>
+    <button class="pill red" id="pickStationary">
+      <div class="top"><span class="dot red"></span><span>2</span></div>
+      <div class="label">Stationary</div>
+    </button>
+    <button class="pill green" id="pickMoving">
+      <div class="top"><span class="dot green"></span><span>3</span></div>
+      <div class="label">Moving</div>
+    </button>
+  </div>
+
+  <label>Range of Motion</label>
+  <div class="row">
+    <button id="startROM">▶️ Start ROM</button>
+    <button id="resetROM">↺ Reset ROM</button>
+    <button id="resetMeasurement" title="Clear dots + lines + goniometer">↺ Reset Measurement</button>
+  </div>
+
+  <label>Interaction Locks</label>
+  <div class="row">
+    <button id="lock3D">🔓 3D: Unlocked</button>
+    <button id="lockGonio">🔓 Gonio Arm: Unlocked</button>
+  </div>
+
+    <!-- SVG overlay: screen-space dots + lines -->
+<div id="gonioHost" class="hide" aria-hidden="true">
+  <svg id="gonioSvg" aria-label="Universal goniometer">
+    <g id="screenDots">
+      <line id="scrLineA" class="scrLine" stroke="#ef4444" x1="0" y1="0" x2="0" y2="0" style="display:none"/>
+      <line id="scrLineB" class="scrLine" stroke="#22c55e" x1="0" y1="0" x2="0" y2="0" style="display:none"/>
+      <circle id="scrFulcrum" r="6" fill="#f59e0b" cx="-100" cy="-100" style="display:none"/>
+      <circle id="scrStationary" r="6" fill="#ef4444" cx="-100" cy="-100" style="display:none"/>
+      <circle id="scrMoving" r="6" fill="#22c55e" cx="-100" cy="-100" style="display:none"/>
+    </g>
+    <g id="viewport" transform="translate(0,0) scale(1)">
+      <g id="rotWrap" transform="rotate(0)">
+        <g id="mirrorWrap" transform="scale(1,1)">
+          <g id="instrument">
+            <g id="head">
+            <circle r="120" fill="rgba(0,0,0,0)" stroke="#94a3b8" stroke-width="1.6" style="pointer-events:all"/>
+            <circle r="86"  fill="none" stroke="#94a3b8" stroke-width="0.9" opacity="0.65"/>     
+              <g id="ticks"></g>
+              <g id="numsOut"></g>
+              <g id="labelsFixed">
+              <g id="numsInWrap"><g id="numsIn"></g></g>
+            </g>
+
+              <circle r="3.2" fill="#94a3b8"/>
+            </g>
+
+            <!-- Stationary (red) -->
+            <g id="armA_grp">
+              <rect x="-10" y="120" width="20" height="260" rx="10" stroke="#ef4444" fill="none" stroke-width="3" />
+              <line id="axisA" x1="0" y1="380" x2="0" y2="-116" stroke="#ef4444" stroke-width="1.6" opacity=".85" stroke-linecap="round"/>
+              <g id="armA_ruler"></g>
+              <circle id="armA_knob" cx="0" cy="380" r="10" fill="#ef4444"/>
+            </g>
+
+            <!-- Moving (green) -->
+            <g id="armB_grp">
+              <rect x="-10" y="-380" width="20" height="500" rx="10" stroke="#22c55e" fill="none" stroke-width="3"/>
+              <line id="axisB" x1="0" y1="-380" x2="0" y2="124" stroke="#22c55e" stroke-width="1.6" opacity=".85" stroke-linecap="round"/>
+              <g id="armB_ruler"></g>
+              <circle id="armB_knob" cx="0" cy="-380" r="10" fill="#22c55e"/>
+              <circle id="armB_handleKnob" cx="0" cy="-380" r="38" fill="rgba(0,0,0,0)" style="pointer-events:all"/>
+              <rect   id="armB_handleShaft" x="-20" y="-380" width="40" height="500" fill="rgba(0,0,0,0)" style="pointer-events:all"/>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </svg>
+</div>
+<!-- ====== NUMBER TUNER DEV TOOL ====== -->
+<style>
+  #numTunerPanel{
+    position:fixed;right:20px;bottom:20px;
+    background:#0f172a;border:1px solid #334155;
+    padding:10px;border-radius:10px;z-index:9999;
+    display:none;color:#e2e8f0;font-size:12px;
+  }
+  #numTunerPanel input{width:60px;}
+</style>
+
+<div id="numTunerPanel">
+  <div style="margin-bottom:5px;font-weight:700">Text Tuner</div>
+  X:<input id="ntX" type="number" step="1"><br>
+  Y:<input id="ntY" type="number" step="1"><br>
+  R:<input id="ntR" type="number" step="1"><br>
+  <button id="ntLog">Log</button>
+</div>
+
+<script>
+let NT_active=null;
+
+document.addEventListener("pointerdown",e=>{
+  if(!(e.target.tagName==="text" || e.target.tagName==="TEXT")) return;
+
+  NT_active = e.target;
+
+  const tr = NT_active.getAttribute("transform") || "";
+  const m = tr.match(/rotate\((-?\d+)\s+(-?\d+)\s+(-?\d+)\)/);
+
+  document.getElementById("numTunerPanel").style.display="block";
+
+  document.getElementById("ntX").value = NT_active.getAttribute("x");
+  document.getElementById("ntY").value = NT_active.getAttribute("y");
+  document.getElementById("ntR").value = m ? m[1] : 0;
+});
+
+["ntX","ntY","ntR"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",()=>{
+    if(!NT_active) return;
+    const x = document.getElementById("ntX").value;
+    const y = document.getElementById("ntY").value;
+    const r = document.getElementById("ntR").value;
+    NT_active.setAttribute("x",x);
+    NT_active.setAttribute("y",y);
+    NT_active.setAttribute("transform",`rotate(${r} ${x} ${y})`);
+  });
+});
+
+document.getElementById("ntLog").onclick = () => {
+  if (!NT_active) return;
+
+  const rawX = NT_active.getAttribute("x") || "0";
+  const rawY = NT_active.getAttribute("y") || "0";
+  const x = Number(rawX).toFixed(1);
+  const y = Number(rawY).toFixed(1);
+
+  const tr = NT_active.getAttribute("transform") || "";
+  let rot = 0;
+  const m = tr.match(/rotate\((-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\)/);
+  if (m) rot = parseFloat(m[1]) || 0;
+
+  const parent   = NT_active.parentNode;
+  const parentId = (parent && parent.id) ? parent.id : "root";
+  const txt      = (NT_active.textContent || "").trim();
+
+  const siblings = parent ? Array.from(parent.querySelectorAll("text")) : [];
+  const same     = siblings.filter(n => (n.textContent || "").trim() === txt);
+  const idx      = same.indexOf(NT_active);
+
+  const key = `${parentId}:${txt}:${idx}`;
+  const snippet = `NUM_TWEAKS["${key}"] = { x:${x}, y:${y}, rot:${rot} };`;
+  console.log("FINAL NUMBER FIX →", snippet);
+};
+const NUM_TWEAKS = {
+  "numsOut:80:1": { x:19.4,  y:110.3, rot:180 },
+  "numsOut:80:2": { x:-19.4, y:110.3, rot:180 },
+  "numsIn:10:1":  { x:-16.5, y:93.6,  rot:180 },
+  "numsIn:10:0":  { x:16.5, y:93.6, rot:180 },
+  "numsIn:20:0":  { x:32.5, y:89.3, rot:180 },
+  "numsIn:20:1":  { x:-32.5, y:89.3, rot:180 },
+  "numsOut:20:1": { x:105.2, y:38.3, rot:180 },
+  "numsOut:20:2": { x:-105.2, y:38.3, rot:180 },
+  "numsIn:30:0":  { x:47.5, y:82.3, rot:180 },
+  "numsIn:30:1":  { x:-47.5, y:82.3, rot:180 },
+  "numsIn:40:0":  { x:61.1, y:72.8, rot:180 },
+  "numsIn:40:1":  { x:-61.1, y:72.8, rot:180 },
+  "numsOut:40:1": { x:85.8, y:72.0, rot:180 },
+  "numsOut:40:2": { x:-85.8, y:72.0, rot:180 },
+  "numsIn:50:0":  { x:72.8, y:61.1, rot:180 },
+  "numsIn:50:1":  { x:-72.8, y:61.1, rot:180 },
+  "numsIn:60:0":  { x:82.3, y:47.5, rot:180 },
+  "numsIn:60:1":  { x:-82.3, y:47.5, rot:180 },
+  "numsOut:60:1": { x:56.0, y:97.0, rot:180 },
+  "numsOut:60:2": { x:-56.0, y:97.0, rot:180 },
+  "numsIn:70:0":  { x:89.3, y:32.5, rot:180 },
+  "numsIn:70:1":  { x:-89.3, y:32.5, rot:180 },
+  "numsIn:80:0":  { x:93.6, y:16.5, rot:180 },
+  "numsIn:80:1":  { x:-93.6, y:16.5, rot:180 },
+  "numsIn:90:0":  { x:95.0, y:0.0, rot:180 },
+  "numsIn:90:1":  { x:-95.0, y:0.0, rot:180 }
+};
+
+function applyNumTweaks(){
+  Object.entries(NUM_TWEAKS).forEach(([key, cfg]) => {
+    const [groupId, label, indexStr] = key.split(":");   // e.g. "numsOut","80","1"
+    const idx = parseInt(indexStr, 10);
+
+    const group = document.getElementById(groupId);
+    if (!group) return;
+
+    const matches = Array.from(group.querySelectorAll("text"))
+      .filter(t => (t.textContent || "").trim() === label);
+
+    const node = matches[idx];
+    if (!node) return;
+
+    const { x, y, rot } = cfg;
+    node.setAttribute("x", x);
+    node.setAttribute("y", y);
+    node.setAttribute("transform", `rotate(${rot} ${x} ${y})`);
+  });
+}
+
+window.addEventListener("load", applyNumTweaks);
+
+</script>
+
+  <details id="controllers">
+    <summary> Controllers</summary>
+    <div class="group">
+      <details id="ctrlGonio">
+        <summary> Goniometer</summary>
+
+
+        <label>
+  Rotate Moving Arm — CW (°)
+  <input type="checkbox" id="cwMode" style="margin-left:8px; width:auto; vertical-align:middle">
+</label>
+<input type="range" min="0" max="360" step="1" value="0" id="rotateCW">
+
+<label>
+  Rotate Moving Arm — CCW (°)
+  <input type="checkbox" id="ccwMode" style="margin-left:8px; width:auto; vertical-align:middle">
+</label>
+<input type="range" min="0" max="360" step="1" value="0" id="rotateCCW">
+        
+         <label>Rotate Goniometer (°)</label>
+        <input type="range" min="0" max="360" step="1" value="0" id="gonioRotate">
+        <label>Gonio Size (10–200%)</label>
+        <input type="range" min="10" max="200" step="5" value="100" id="gonioSize">
+
+        <label>Gonio X (px)</label>
+        <input type="range" min="0" max="2000" step="1" value="0" id="gonioX">
+        <label>Gonio Y (px)</label>
+        <input type="range" min="0" max="2000" step="1" value="0" id="gonioY">
+      </details>
+
+      <details id="ctrlModel">
+        <summary>Model</summary>
+        <label>Model X (m)</label>
+        <input type="range" min="-2" max="2" step="0.01" value="0" id="modelX">
+        <label>Model Z (m)</label>
+        <input type="range" min="-2" max="2" step="0.01" value="0.6" id="modelZ">
+        <label>Model Y (m) — up/down</label>
+        <input type="range" min="-0.2" max="0.6" step="0.005" value="0" id="modelY">
+        <label>Model Scale (%)</label>
+        <input type="range" min="60" max="160" step="1" value="100" id="modelScale">
+        <label>Model Yaw (°)</label>
+        <input type="range" min="0" max="360" step="1" value="0" id="modelYaw">
+      </details>
+    </div>
+  </details>
+     <details id="boneAdv">
+    <summary>Bone (Advanced)</summary>
+        <label>Bone (Blender order)</label>
+        <select id="boneSel"></select>
+        <div class="row">
+          <div style="flex:1">
+            <label>Rotate X (°)</label>
+            <input type="range" min="-180" max="180" step="1" value="0" id="rx">
+          </div>
+          <div style="flex:1">
+            <label>Rotate Y (°)</label>
+            <input type="range" min="-180" max="180" step="1" value="0" id="ry">
+          </div>
+        </div>
+        <label>Rotate Z (°)</label>
+        <input type="range" min="-180" max="180" step="1" value="0" id="rz">
+
+        <div class="row" style="margin-top:6px">
+          <button id="zeroBone" class="mini">Zero Bone</button>
+          <button id="zeroAll" class="mini" title="Reset everything to anatomic baseline">Zero All</button>
+        </div>
+
+      </details>
+
+
+<label style="display:none">Event Log</label>
+      <pre id="log" style="display:none"></pre>
+    </div>
+  </div>
+
+  <div id="msg">Loading…</div>
+  <canvas id="c"></canvas>
+
+  <script type="module">
+  import * as THREE from "three";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+  import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+  import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
+  import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+
+const MODEL_URLS = {
+  Roman: "https://kingto89.github.io/ROMetrics.com/assets/Roman_ROMetrics.glb",
+  Roma:  "https://kingto89.github.io/ROMetrics.com/assets/Roma_ROMetrics.glb"
+};
+
+function pickModelUrl(){
+  const u = new URL(location.href);
+  const qRaw = (u.searchParams.get("model") || "").trim();
+
+  // allow ?model=Roma or ?model=Roman
+  if (qRaw && MODEL_URLS[qRaw]) return MODEL_URLS[qRaw];
+
+  // allow absolute URL or relative path
+  if (qRaw && /^https?:\/\//i.test(qRaw)) return qRaw;
+  if (qRaw) return new URL(qRaw, location.href).href;
+
+  return MODEL_URLS.Roma; // default
+}
+
+let MODEL_URL = pickModelUrl();
+  
+
+let lock3D = false;
+let lockGonio = false;
+   
+/* ===================== GONIOMETER LOGIC (From Index 2) ===================== */
+const Gonio = (() => {
+  const host        = document.getElementById('gonioHost');
+  const svg         = document.getElementById('gonioSvg');
+  const viewport    = document.getElementById('viewport');
+  const rotWrap     = document.getElementById('rotWrap');
+  const numsInWrap  = document.getElementById('numsInWrap');
+  const labelsFixed = document.getElementById('labelsFixed');
+  const numsOut     = document.getElementById('numsOut');
+  const numsIn      = document.getElementById('numsIn');
+  const ticks       = document.getElementById('ticks');
+  const armA_ruler  = document.getElementById('armA_ruler');
+  const armB_ruler  = document.getElementById('armB_ruler');
+
+  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  const clamp360=a=>(a%360+360)%360;
+  const toDegUp=(x,y)=>clamp360(Math.atan2(-y,x)*180/Math.PI+90);
+
+  (function build(){
+    const NS = "http://www.w3.org/2000/svg";
+    if(!ticks || !numsOut || !numsIn) return;
+    const R = 120, Rin = 86;
+    const line = (p,x1,y1,x2,y2,cls)=>{
+      const n = document.createElementNS(NS,'line');
+      n.setAttribute('x1',x1); n.setAttribute('y1',y1); n.setAttribute('x2',x2); n.setAttribute('y2',y2);
+      if (cls) n.setAttribute('class',cls); p.appendChild(n);
+    };
+    const text = (p,x,y,t,cls)=>{
+      const n = document.createElementNS(NS,'text');
+      n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('class',cls);
+      n.textContent = t; p.appendChild(n); return n;
+    };
+    const innerFromD = (d)=>{ const raw=(d+180)%360; return (raw<=180)?raw:360-raw; };
+    const rBand = (R+Rin)*0.5;
+    for (let d=0; d<360; d+=5){
+      const a=(d-90)*Math.PI/180, big=(d%10===0), len=big?12:6;
+      const r1=rBand-len*0.5, r2=rBand+len*0.5;
+      line(ticks, Math.cos(a)*r1, Math.sin(a)*r1, Math.cos(a)*r2, Math.sin(a)*r2, big?"tick tickBig":"tick");
+    }
+    numsOut.innerHTML=""; numsIn.innerHTML="";
+    const rWhite=R-8, rInner=Rin+9;
+    for (let d=0; d<360; d+=10){
+      const inner=innerFromD(d), outer=Math.abs(90-inner);
+      if (outer%20===0 && outer<=80) {
+        const a=(d-90)*Math.PI/180; text(numsOut, Math.cos(a)*rWhite, Math.sin(a)*rWhite, String(outer), "labelOuter");
+      }
+      if (inner%10===0 && (inner!==0 || d===180)){
+        const a=(d-90)*Math.PI/180; text(numsIn, Math.cos(a)*rInner, Math.sin(a)*rInner, String(inner), "labelInner");
+      }
+    }
+    function buildTipRuler(group, tipY, dir, which){
+      if(!group) return; group.innerHTML='';
+      const CM=14, IN=2.5;
+      const line2=(x1,y1,x2,y2,c)=>{const n=document.createElementNS(NS,'line');n.setAttribute('x1',x1);n.setAttribute('y1',y1);n.setAttribute('x2',x2);n.setAttribute('y2',y2);n.setAttribute('class',c||'rulerTick');group.appendChild(n);};
+      const label=(x,y,t,rot)=>{const n=document.createElementNS(NS,'text');n.setAttribute('x',x);n.setAttribute('y',y);n.setAttribute('class','ruLbl'); if(rot) n.setAttribute('transform',`rotate(${rot} ${x} ${y})`); n.textContent=t; n.dataset.arm=which; n.dataset.x=x; n.dataset.y=y; group.appendChild(n);};
+      for(let c=0; c<=15.01; c+=0.5){
+        const y=tipY-dir*(c*CM), long=Math.abs(c%1)<0.01, mid=!long && Math.abs(c%0.5)<0.01, w=long?8:mid?5:3;
+        line2(-10,y,-10-w,y); if(long) label(-18,y,String(Math.round(c)),-90);
+      }
+      for(let i=0; i<=6.01; i+=0.5){
+        const y=tipY-dir*(i*IN*CM), long=Math.abs(i%1)<0.01, mid=!long && Math.abs(i%0.5)<0.01, w=long?8:mid?5:3;
+        line2(10,y,10+w,y); if(long) label(18,y,String(Math.round(i)),90);
+      }
+      label(-26,tipY,'cm',-90); label(26,tipY,'in',90);
+    }
+    buildTipRuler(armA_ruler, +380, +1, 'A');
+    buildTipRuler(armB_ruler, -380, -1, 'B');
+  })();
+
+  let mov=30, zoom=1, panX=innerWidth/2, panY=innerHeight/2, baseRot=0, userRot=0, scale=1, zeroRef=0;
+  let draggingArm=false, draggingPan=false, lastPanScreen=null;
+  let dragOffset = 0;    // Essential for smooth dragging (no snapping to finger)
+  let isRomMode = false; // Essential for sliders (prevents jumping back to 0)
+  
+  const getCwMode = () => { const el = document.getElementById("cwMode"); return el ? el.checked : false; };
+
+  function applyView(){ viewport.setAttribute('transform',`translate(${panX},${panY}) scale(${zoom*scale})`); }
+  function applyRot(){ rotWrap.setAttribute('transform',`rotate(${baseRot+userRot})`); }
+  function applyLabelFix(){
+    const t = -(baseRot + userRot);
+    if(labelsFixed) labelsFixed.setAttribute('transform', `rotate(${t})`);
+    if(numsInWrap) numsInWrap.setAttribute('transform', `rotate(${-t})`);
+    if(numsOut) numsOut.setAttribute('transform','rotate(0)');
+  }
+  function updateRulerUpright(){
+    document.querySelectorAll('.ruLbl').forEach(t=>{
+      const which=t.dataset.arm, base=(which==='A'?0:mov)+baseRot+userRot, x=+t.dataset.x, y=+t.dataset.y;
+      t.setAttribute('transform', `rotate(${-base} ${x} ${y})`);
+    });
+  }
+  function clampPanToViewport(){
+    const bound=80*zoom*scale, m=6, minX=m+bound, maxX=innerWidth-m-bound, minY=m+bound, maxY=innerHeight-m-bound;
+    panX = (minX<=maxX)? Math.min(maxX, Math.max(minX, panX)) : innerWidth/2;
+    panY = (minY<=maxY)? Math.min(maxY, Math.max(minY, panY)) : innerHeight/2;
+  }
+  function render(){
+    const a=document.getElementById('armA_grp'), b=document.getElementById('armB_grp');
+    if(a) a.setAttribute('transform','rotate(0)');
+    if(b) b.setAttribute('transform',`rotate(${mov})`);
+    updateRulerUpright();
+  }
+  
+  clampPanToViewport(); applyView(); applyRot(); applyLabelFix(); render();
+
+  /* Interactions */
+  const inst = document.getElementById('instrument');
+
+/* --- NEW: Wire up the Green Arm Handles --- */
+  ['armB_handleKnob', 'armB_handleShaft', 'armB_knob'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) {
+          el.style.pointerEvents = "all"; 
+          el.style.cursor = "grab";
+          // THIS LINE FIXES THE JUMP: Prevents scrolling while dragging the arm
+          el.style.touchAction = "none"; 
+          el.addEventListener('pointerdown', startArmDrag);
+      }
+  });
+
+  // Listen globally for the "Spin" gesture
+  window.addEventListener('pointermove', moveArm);
+  window.addEventListener('pointerup', endArm);
+  // THESE LINES FIX THE JUMP: Stop dragging if touch is interrupted
+  window.addEventListener('pointercancel', endArm);
+  window.addEventListener('blur', endArm);
+  /* ------------------------------------------ */
+  if(inst){
+    inst.addEventListener('pointerdown', e=>{
+      if (typeof lockGonio!=='undefined' && lockGonio) return;
+      if (e.target.closest('#armB_handleKnob')||e.target.closest('#armB_handleShaft')||e.target.closest('#armB_knob')) return;
+      e.preventDefault(); draggingPan=true; lastPanScreen={x:e.clientX, y:e.clientY};
+      inst.setPointerCapture?.(e.pointerId);
+    });
+    inst.addEventListener('pointermove', e=>{
+      if (typeof lockGonio!=='undefined' && lockGonio) return;
+      if (!draggingPan || !lastPanScreen) return;
+      e.preventDefault();
+      const dx=(e.clientX-lastPanScreen.x)/(zoom*scale), dy=(e.clientY-lastPanScreen.y)/(zoom*scale);
+      panX+=dx; panY+=dy; lastPanScreen={x:e.clientX, y:e.clientY};
+      clampPanToViewport(); applyView();
+    });
+    inst.addEventListener('pointerup', ()=>{ draggingPan=false; lastPanScreen=null; });
+    inst.addEventListener('pointercancel', ()=>{ draggingPan=false; lastPanScreen=null; });
+  }
+  if(svg) svg.addEventListener('wheel', e=>{
+    if (typeof lockGonio!=='undefined' && lockGonio) return;
+    e.preventDefault();
+    const step = Math.sign(e.deltaY)<0 ? 1.22 : 1/1.22;
+    zoom=clamp(zoom*step, 0.07, 10);
+    clampPanToViewport(); applyView();
+  }, {passive:false});
+
+function startArmDrag(e){
+    if (typeof lockGonio!=='undefined' && lockGonio) return;
+    e.stopPropagation(); e.preventDefault();
+    document.getElementById('armB_grp').setPointerCapture?.(e.pointerId);
+    draggingArm=true;
+    // Calculate offset so arm doesn't snap to finger
+    const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+    const p=pt.matrixTransform(rotWrap.getScreenCTM().inverse());
+    const fingerAngle = clamp360(toDegUp(p.x, p.y));
+    dragOffset = fingerAngle - mov; 
+  }
+
+function moveArm(e){
+    if (typeof lockGonio!=='undefined' && lockGonio) return;
+    if(!draggingArm) return;
+    e.stopPropagation(); e.preventDefault();
+
+    // 1. Capture old position to determine direction
+    const oldMov = mov;
+
+    // 2. Calculate new position
+    const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+    const p=pt.matrixTransform(rotWrap.getScreenCTM().inverse());
+    const fingerAngle = clamp360(toDegUp(p.x, p.y));
+    mov = clamp360(fingerAngle - dragOffset); 
+    
+    // 3. Auto-Detect Direction (Fixes ROM counting 360-1)
+    // If dragging CW (decreasing), we switch to "CCW Mode" (Inverted math) so it counts up.
+    // If dragging CCW (increasing), we switch to "CW Mode" (Standard math).
+    if (typeof isRomMode !== 'undefined' && isRomMode) {
+         let delta = mov - oldMov;
+         // Handle wrap-around math (e.g. 359 -> 1 is +2, not -358)
+         if(delta > 180) delta -= 360;
+         if(delta < -180) delta += 360;
+
+         // Only switch if moving significantly (prevents jitter)
+         if(Math.abs(delta) > 0.5) {
+             const cw = document.getElementById("cwMode");
+             const ccw = document.getElementById("ccwMode");
+             if(cw && ccw) {
+                 if(delta > 0) { // Increasing Angle -> Standard Mode
+                     cw.checked = true; ccw.checked = false;
+                 } else { // Decreasing Angle -> Inverted Mode
+                     ccw.checked = true; cw.checked = false;
+                 }
+             }
+         }
+    }
+
+    render();
+  }
+function endArm(){ 
+    draggingArm=false; 
+    
+    // Only update the internal baseline if we are NOT in ROM mode.
+    // This prevents the ROM from resetting to 0 immediately when you let go.
+    if (typeof isRomMode !== 'undefined' && !isRomMode) {
+        zeroRef = mov; 
+    }
+    
+    // Reset slider visuals to 0
+    const cw = document.getElementById("rotateCW");
+    const ccw = document.getElementById("rotateCCW");
+    if(cw) cw.value = 0;
+    if(ccw) ccw.value = 0;
+}
+
+ return {
+    show:()=>{ host.classList.remove('hide'); host.setAttribute('aria-hidden','false'); if(inst) inst.style.display='block'; clampPanToViewport(); applyView(); },
+    hide:()=>{ host.classList.add('hide'); host.setAttribute('aria-hidden','true'); },
+    setPose:(cx,cy,base,m)=>{ panX=cx; panY=cy; baseRot=base; mov=clamp360(m-base); clampPanToViewport(); applyView(); applyRot(); applyLabelFix(); render(); },
+    setScale:(k)=>{ scale=clamp(k||1,0.1,2); clampPanToViewport(); applyView(); },
+    setZoom:(k)=>{ zoom=clamp(k||1,0.07,10); clampPanToViewport(); applyView(); },
+    degFromScreenVec:(dx,dy)=>toDegUp(dx,dy),
+    zeroHere:()=>{ zeroRef=clamp360(mov); },
+    setMovDegRel:(deg)=>{ mov=clamp360(zeroRef+deg); render(); },
+    setUserRot:(deg)=>{ userRot=deg; applyRot(); applyLabelFix(); },
+    getMovDegAbs:()=>clamp360(mov),
+    setPan:(x,y)=>{ panX=x; panY=y; clampPanToViewport(); applyView(); },
+    getPan:()=>{ return {x:panX,y:panY}; },
+
+get angle(){ 
+    // 1. Calculate standard Clockwise distance from zero (0 to 360)
+    let delta = clamp360(mov - zeroRef);
+
+    // 2. If in CCW Mode, invert the math so it counts UP (1, 10, 90...)
+    // instead of DOWN (359, 350, 270...)
+    if (!getCwMode()) {
+        delta = (360 - delta) % 360;
+    }
+
+    return delta; 
+},
+    setRomMode: (v) => { isRomMode = v; }, 
+    // -------------------------
+
+    refresh:()=>{ applyView(); applyRot(); applyLabelFix(); render(); }
+  };
+})(); // End of Gonio Module
+window.Gonio = Gonio;
+
+    
+/* ===== UI ===== */
+const regionSel = document.getElementById("regionSel");  
+const positionSel = document.getElementById("positionSel");
+const modelSel = document.getElementById("modelSel");    
+const showNote = document.getElementById("showNote");
+const notePopup = document.getElementById("notePopup");
+const closeNote = document.getElementById("closeNote");
+const noteContent = document.getElementById("noteContent");
+
+const msg = document.getElementById("msg");
+const logEl = document.getElementById("log");
+const log = (t)=>{ logEl.textContent += t + "\n"; logEl.scrollTop = logEl.scrollHeight; };
+
+const panel = document.getElementById("panel");
+const dragbar = document.getElementById("dragbar");
+
+const actionSel = document.getElementById("actionSel");
+const actionDeg = document.getElementById("actionDeg");
+const pairLabel = document.getElementById("pairLabel");
+const zeroAll = document.getElementById("zeroAll");
+
+const boneSel = document.getElementById("boneSel");
+const rx = document.getElementById("rx");
+const ry = document.getElementById("ry");
+const rz = document.getElementById("rz");
+const zeroBone = document.getElementById("zeroBone");
+
+if (modelSel){
+  // set dropdown to match whatever MODEL_URL resolved to
+  modelSel.value = /\/Roma_/i.test(MODEL_URL) ? "Roma" : "Roman";
+
+  modelSel.addEventListener("change", () => {
+    const key = modelSel.value;
+    MODEL_URL = MODEL_URLS[key] || MODEL_URLS.Roman;
+
+    // keep URL shareable (so reload keeps the chosen model)
+    const u = new URL(location.href);
+    u.searchParams.set("model", key);
+    history.replaceState(null, "", u);
+
+    loadModel(); // reload with new MODEL_URL
+  });
+}
+    
+/* ===================== SCREEN-SPACE DOTS (no 3D raycast) ===================== */
+const scr = { fulcrum:null, stationary:null, moving:null };
+let romActive = false; // Added
+const svg = document.getElementById('gonioSvg');
+const scrFulcrum = document.getElementById('scrFulcrum');
+const scrStationary = document.getElementById('scrStationary');
+const scrMoving = document.getElementById('scrMoving');
+const scrLineA = document.getElementById('scrLineA');
+const scrLineB = document.getElementById('scrLineB');
+
+document.getElementById('instrument').style.display = 'none';  ////added to stop Gonio loading early during integration
+
+let target = null;
+function setDotEl(el, p){
+  if(!p){ el.style.display='none'; return; }
+  el.setAttribute('cx', p.x); el.setAttribute('cy', p.y); el.style.display='block';
+}
+function setLineEl(el, a, b, onColor){
+  if(a && b){
+    el.setAttribute('x1', a.x); el.setAttribute('y1', a.y);
+    el.setAttribute('x2', b.x); el.setAttribute('y2', b.y);
+    el.style.display='block';
+    if(onColor) el.setAttribute('stroke', onColor);
+  } else el.style.display='none';
+}
+
+function refreshScreenDots(){
+  setDotEl(scrFulcrum,    scr.fulcrum);
+  setDotEl(scrStationary, scr.stationary);
+  setDotEl(scrMoving,     scr.moving);
+  setLineEl(scrLineA, scr.fulcrum, scr.stationary, '#ef4444');
+  setLineEl(scrLineB, scr.fulcrum, scr.moving,     '#22c55e');
+
+  const host = document.getElementById('gonioHost');
+  const anyPlaced = !!(scr.fulcrum || scr.stationary || scr.moving);
+
+  if (anyPlaced) { 
+    host.classList.remove('hide'); 
+    host.setAttribute('aria-hidden','false'); 
+  } else { 
+    host.classList.add('hide');    
+    host.setAttribute('aria-hidden','true');  
+  }
+
+  // LAUNCH RULER if all 3 dots are placed
+  if(scr.fulcrum && scr.stationary && scr.moving){
+     
+     const Fs = scr.fulcrum, Ss = scr.stationary, Ms = scr.moving;
+     const baseDeg = Gonio.degFromScreenVec(Ss.x - Fs.x, Ss.y - Fs.y);
+     const movDeg  = Gonio.degFromScreenVec(Ms.x - Fs.x, Ms.y - Fs.y);
+
+     const inst = document.getElementById('instrument');
+     if (inst.style.display === 'none' || inst.style.display === '') {
+        inst.style.display = 'block'; // 
+        Gonio.setZoom(1);
+        const targetFrac = 0.18;
+        const targetBound = Math.min(innerWidth, innerHeight) * targetFrac;
+        const autoScale = Math.max(0.25, Math.min(0.9, targetBound / 140));
+        Gonio.setScale(autoScale);
+        if(document.getElementById("gonioSize")) document.getElementById("gonioSize").value = Math.round(autoScale * 100);
+     }
+
+     Gonio.show();
+     Gonio.setPose(Fs.x, Fs.y, baseDeg, movDeg);
+     Gonio.zeroHere();
+     
+     // Update UI
+     const p = Gonio.getPan();
+     if(document.getElementById("gonioX")) document.getElementById("gonioX").value = Math.round(p.x);
+     if(document.getElementById("gonioY")) document.getElementById("gonioY").value = Math.round(p.y);
+     if(typeof setAngleHUD === 'function') setAngleHUD(Gonio.getMovDegAbs(), "");
+     set3DLock (true);
+     if(typeof setGonioLock === 'function') setGonioLock(false);
+
+  } else {
+     // Hide ruler if incomplete
+     const inst = document.getElementById('instrument');
+     if(inst) inst.style.display = 'none';
+  }
+}
+/* ===== Region → MD file map ===== */
+const NOTE_MAP = {
+  cervical_spine: "cervical_spine.md",
+  thoracic_lumbar_spine: "thoracic_lumbar_spine.md",
+  glenohumeral_joint: "glenohumeral_joint.md",
+  elbow_radioulnar: "elbow_radioulnar.md",
+  wrist: "wrist.md",
+  hip: "hip.md",
+  knee: "knee.md",
+  talocrural_ankle: "talocrural_ankle.md",
+  transverse_tarsal_subtalar: "transverse_tarsal_subtalar.md"
+};
+
+/* ===== Load placement note ===== */
+async function loadNoteFile() {
+  const region = regionSel.value;
+
+  if (!region || !NOTE_MAP[region]) {
+    noteContent.innerHTML = "<i>No placement guide available for this action.</i>";
+    return;
+  }
+  // FIX: Corrected directory order and mixed-up names based on your GitHub link.
+  const filePath = `https://kingto89.github.io/ROMetrics.com/goniometry-trainer/goniometer-placement-guide/${NOTE_MAP[region]}`;
+
+  try {
+    const res = await fetch(filePath);
+    if (!res.ok) throw new Error("Missing file");
+    const md = await res.text();
+
+    const converter = new showdown.Converter({ tables: true });
+    noteContent.innerHTML = converter.makeHtml(md);
+
+  } catch (e) {
+    noteContent.innerHTML = "<i>Could not load placement notes.</i>";
+  }
+}
+/* ===== Events ===== */
+showNote.onclick = () => {
+  loadNoteFile();
+  notePopup.style.display = "block";
+};
+
+closeNote.onclick = () => {
+  notePopup.style.display = "none";
+};
+
+
+  /* ===== Collision limits (Safe ROM line; dev-tuned) ===== */
+const COLLIM = {
+  enabled: false,
+  // ===== Existing upper body =====
+  trunkLatLMax: 40,
+  trunkLatRMax: 40,
+  cervRotLMax: 80,
+  cervRotRMax: 80,
+  shExtLMax: 60, shExtRMax: 60,
+  shAddLMax: 20, shAddRMax: 20,
+  shFlexLMax: 110, shFlexRMax: 110,
+  shAbdLMax: 160, shAbdRMax: 160,
+  shIRLMax: 70, shIRRMax: 70,
+  shERLMax: 90, shERRMax: 90,
+  elExtLMax: 10, elExtRMax: 10,
+  elFlexLMax: 130, elFlexRMax: 130,
+  wrSupLMax: 95, wrSupRMax: 95,
+
+  // ===== NEW lower body defaults =====
+  hipFlexLMax: 110, hipFlexRMax: 110,
+  hipExtLMax: 30,  hipExtRMax: 30,
+  hipAbdLMax: 45,  hipAbdRMax: 45,
+  hipAddLMax: 25,  hipAddRMax: 25,
+  hipIRLMax: 45,  hipIRRMax: 45,
+  kneeFlexLMax: 150, kneeFlexRMax: 150,
+  kneeExtLMax: 5,   kneeExtRMax: 5,
+  anklePF_LMax: 50, anklePF_RMax: 50,
+  ankleDF_LMax: 20, ankleDF_RMax: 20,
+  footInvLMax: 35,  footInvRMax: 35,
+  footEvLMax: 20,   footEvRMax: 20,
+
+  load() {},
+  save() {}
+};
+
+function capFor(action){
+  COLLIM.load();  // ✅ refresh saved limits before applying
+  if(!COLLIM.enabled || !action) return null; // no cap
+  const { key, sign } = action; // sign: +1 or -1
+  
+  /* --- START OF FIX: Custom Hip Flexion Limit (Sitting) --- */
+  const region = regionSel.value;
+  const position = positionSel.value;
+  const actionLabel = actionSel.options[actionSel.selectedIndex]?.textContent || '';
+  
+  if (region === 'hip' && 
+      position === 'sitting' && 
+      key.startsWith('hip_fe_') && 
+      sign > 0 && 
+      actionLabel.includes('Flexion')) {
+            log(`Custom Collision: Hip Flexion in Sitting: 30°`);
+            return 30; // Apply the unique collision limit of 30°
+  }
+/* --- START OF NEW FIX: Custom Hip External Rotation Limit (Sitting) --- */
+// Check if region=Hip, position=Sitting, key=Hip Internal/External Rotation, and sign=Negative (External Rotation direction)
+if (regionSel.value === 'hip' && 
+    positionSel.value === 'sitting' && 
+    key.startsWith('hip_irer_') && 
+    sign < 0 && 
+    actionLabel.includes('External Rotation')) {
+        log(`Custom Collision: Hip External Rotation in Sitting: 30°`);
+        return 30; // Apply the unique collision limit of 30°
+}
+/* --- END OF NEW FIX --- */  
+  /* --- START OF NEW FIX: Custom Knee Extension Limit (Sitting) --- */
+// Check if region=Knee, position=Sitting, key=Knee Extension, and sign=Positive (Extension direction)
+if (region === 'knee' && 
+    position === 'sitting' && 
+    key.startsWith('knee_fe_') && 
+    sign > 0) {
+        log(`Custom Collision: Knee Extension in Sitting: 55°`);
+        return 55; // Apply the unique collision limit of 55°
+}
+/* --- START OF NEW FIX: Custom Knee Flexion Limit (Sitting) --- */
+// Check if region=Knee, position=Sitting, key=Knee Flexion, and sign=Negative (Flexion direction)
+if (regionSel.value === 'knee' && 
+    positionSel.value === 'sitting' && 
+    key.startsWith('knee_fe_') && 
+    sign < 0) {
+        log(`Custom Collision: Knee Flexion in Sitting: 35°`);
+        return 35; // Apply the unique collision limit of 35°
+}
+/* --- START OF YOUR REQUESTED FIX: Thoracic/Lumbar Trunk Flexion (Sitting) --- */
+  if (region === 'thoracic_lumbar_spine' && 
+      position === 'sitting' && 
+      key === 'trunk_fe' &&
+      sign > 0 &&
+      actionLabel.includes('Flexion')) {
+          log(`Custom Collision: T/L Spine Flexion in Sitting: 45°`);
+          return 45; // Enforce the 45 degree limit
+  }  
+/* --- END OF NEW FIX --- */
+    // Cervical rotation L/R
+    if(key==='cerv_rot') return (sign>0) ? COLLIM.cervRotLMax : COLLIM.cervRotRMax; // + = Left, - = Right
+// Shoulder Flex/Ext
+  if (/^sh_fe_/.test(key)) {
+    const isLeft = key.endsWith('_l');
+    if (sign > 0) { 
+      // Flexion
+      return isLeft ? COLLIM.shFlexLMax : COLLIM.shFlexRMax;
+    } else {
+      // Now correctly uses Extension limits (60).
+      return isLeft ? COLLIM.shExtLMax : COLLIM.shExtRMax;
+    }
+  }
+
+// Shoulder Abd/Add — handle L normally; R corrected
+if (/^sh_aa_/.test(key)) {
+  const isLeft = key.endsWith('_l');
+  if (isLeft) {
+    // Left: + = Abduction, − = Adduction (normal)
+    return (sign > 0) ? COLLIM.shAbdLMax : COLLIM.shAddLMax;
+  } else {
+        // FIX: Use Abduction Limit (170) for Abduction (+), and Adduction Limit (30) for Adduction (-)
+        return (sign > 0) ? COLLIM.shAbdRMax : COLLIM.shAddRMax;
+      }
+}
+
+    // Shoulder IR/ER caps
+if (/^sh_irer_/.test(key)) {
+  const isLeft = key.endsWith('_l');
+  if (sign > 0) { // Internal Rotation
+    return isLeft ? COLLIM.shIRLMax : COLLIM.shIRRMax;
+  } else { // External Rotation
+    return isLeft ? COLLIM.shERLMax : COLLIM.shERRMax;
+  }
+}
+  // === Elbow Flexion / Extension ===
+if (/^el_fe_/.test(key)) {
+  const isLeft = key.endsWith('_l');
+  if (sign > 0) { 
+    // Flexion
+    return isLeft ? COLLIM.elFlexLMax : COLLIM.elFlexRMax;
+  } else if (sign < 0) {
+    // Extension
+    return isLeft ? COLLIM.elExtLMax : COLLIM.elExtRMax;
+  }
+}
+    // Wrist PS → cap supination only. NOTE: in our menu below, Supination is the NEGATIVE direction (sign -1)
+    if(/^wr_ps_/.test(key) && sign<0){
+      return key.endsWith('_l') ? COLLIM.wrSupLMax : COLLIM.wrSupRMax;
+    }
+    // Trunk lateral (existing)
+    if(key==='trunk_lat') return (sign>0) ? COLLIM.trunkLatLMax : COLLIM.trunkLatRMax;
+    // Hip Flexion (both)
+if(/^hip_fe_/.test(key)){
+  if (sign > 0) return key.endsWith('_l') ? COLLIM.hipFlexLMax : COLLIM.hipFlexRMax;
+}
+// Hip Abduction / Adduction
+if (/^hip_aa_/.test(key)) {
+  const isLeft = key.endsWith('_l');
+  if (isLeft) {
+    // Left: + = Abduction, − = Adduction
+    return (sign > 0) ? COLLIM.hipAbdLMax : COLLIM.hipAddLMax;
+  } else {
+    // Right: + = Adduction, − = Abduction
+    return (sign > 0) ? COLLIM.hipAddRMax : COLLIM.hipAbdRMax;
+  }
+}
+// Hip Internal / External Rotation
+if (/^hip_irer_/.test(key)) {
+  const isLeft = key.endsWith('_l');
+  // symmetric cap for both directions (you can split later if needed)
+  return isLeft ? COLLIM.hipIRLMax : COLLIM.hipIRRMax;
+}
+
+// Knee Flexion / Extension (only flexion capped)
+if(/^knee_fe_/.test(key)){
+  if(sign < 0) return key.endsWith('_l') ? COLLIM.kneeFlexLMax : COLLIM.kneeFlexRMax; // Flexion (sign -1, caps at 150)
+  if(sign > 0) return key.endsWith('_l') ? COLLIM.kneeExtLMax : COLLIM.kneeExtRMax;  // Extension (sign +1, caps at 5)
+}
+
+// Ankle PF / DF
+if(/^ankle_dfpf_/.test(key)){
+  if(sign > 0) return key.endsWith('_l') ? COLLIM.anklePF_LMax : COLLIM.anklePF_RMax;
+  if(sign < 0) return key.endsWith('_l') ? COLLIM.ankleDF_LMax : COLLIM.ankleDF_RMax;
+}
+
+// Foot Inversion / Eversion
+if(/^foot_invev_/.test(key)){
+  if(sign > 0) return key.endsWith('_l') ? COLLIM.footEvLMax : COLLIM.footEvRMax;
+  if(sign < 0) return key.endsWith('_l') ? COLLIM.footInvLMax : COLLIM.footInvRMax;
+}
+    return null;
+  }
+
+  const antiBox = document.getElementById('antiBox');
+if (antiBox){
+  COLLIM.enabled = true;            // always on
+  antiBox.checked = true;           // checkbox state locked
+  antiBox.parentElement.style.display = 'none'; // hide the label+checkbox in UI
+  antiBox.addEventListener('click', (e)=> e.preventDefault()); // ignore clicks
+}
+
+  /* ===== Draggable panel ===== */
+  (function(){
+    let dragging=false, sx=0, sy=0, startLeft=0, startTop=0;
+    const onDown = (e)=>{ dragging=true; sx=e.clientX; sy=e.clientY;
+      const r = panel.getBoundingClientRect();
+      startLeft = r.left; startTop = r.top;
+      e.preventDefault();
+    };
+    const onMove = (e)=>{ if(!dragging) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      panel.style.left = Math.max(8, startLeft + dx) + "px";
+      panel.style.top = Math.max(8, startTop + dy) + "px";
+    };
+    const onUp = ()=>{ dragging = false; };
+    dragbar.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  })();
+
+  /* ===== Three setup ===== */
+  const canvas = document.getElementById("c");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(devicePixelRatio);
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = false;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene
+  window.scene = scene;  
+  scene.background = new THREE.Color(0x0b1220);
+
+  const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.01, 100);
+  camera.position.set(1.6, 1.6, 3.2);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.minDistance = 0.6; controls.maxDistance = 6;
+  controls.target.set(0,1.1,0);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x333344, 0.7));
+  const key = new THREE.DirectionalLight(0xffffff, 1.2);
+  key.position.set(2.5,4,2.5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048,2048);
+  key.shadow.camera.near = 0.1; key.shadow.camera.far = 15;
+  key.shadow.camera.left = -4; key.shadow.camera.right = 4; key.shadow.camera.top = 4; key.shadow.camera.bottom = -4;
+  scene.add(key);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.ShadowMaterial({ opacity: 0.45 }));
+  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+
+  /* ===== Loader (UNCHANGED loading flow) ===== */
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  const draco = new DRACOLoader(); draco.setDecoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/"); loader.setDRACOLoader(draco);
+  const ktx2 = new KTX2Loader(); ktx2.setTranscoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/basis/"); ktx2.detectSupport(renderer); loader.setKTX2Loader(ktx2);
+
+  let model = null, skeleton = null;
+  const initialBoneRot = new Map();
+
+  function groundSnap(){
+    if (!model) return;
+    const box = new THREE.Box3().setFromObject(model);
+    const minY = box.min.y;
+    if (isFinite(minY)) model.position.y -= minY;
+  }
+
+  /* ===== Blender order for Advanced menu ===== */
+  const BLENDER_ORDER = [
+    "pelvis",
+    "spine01","spine02","spine03",
+    "neck","head",
+    "clavicle_L","upperarm_L","upperarm_twist_L","lowerarm_L","lowerarm_twist_L","hand_L",
+    "thumb01_L","thumb02_L","thumb03_L",
+    "index00_L","index01_L","index02_L","index03_L",
+    "middle00_L","middle01_L","middle02_L","middle03_L",
+    "ring00_L","ring01_L","ring02_L","ring03_L",
+    "pinky00_L","pinky01_L","pinky02_L","pinky03_L",
+    "clavicle_R","upperarm_R","upperarm_twist_R","lowerarm_R","lowerarm_twist_R","hand_R",
+    "thumb01_R","thumb02_R","thumb03_R",
+    "index00_R","index01_R","index02_R","index03_R",
+    "middle00_R","middle01_R","middle02_R","middle03_R",
+    "ring00_R","ring01_R","ring02_R","ring03_R",
+    "pinky00_R","pinky01_R","pinky02_R","pinky03_R",
+    "thigh_L","thigh_twist_L","calf_L","calf_twist_L","foot_L","toes_L",
+    "thigh_R","thigh_twist_R","calf_R","calf_twist_R","foot_R","toes_R"
+  ];
+  const ORDER_INDEX = Object.fromEntries(BLENDER_ORDER.map((n,i)=>[n.toLowerCase(), i]));
+
+  /* ===== Populate bones (sorted) ===== */
+  function populateBones(){
+    boneSel.innerHTML = "";
+    if (!skeleton) {
+      const o = document.createElement("option");
+      o.value = ""; o.textContent = "(No skeleton)";
+      boneSel.appendChild(o);
+      return;
+    }
+    const bones = [...skeleton.bones].sort((a,b)=>{
+      const ai = ORDER_INDEX[(a.name||"").toLowerCase()];
+      const bi = ORDER_INDEX[(b.name||"").toLowerCase()];
+      const av = (ai===undefined) ? 9999 : ai;
+      const bv = (bi===undefined) ? 9999 : bi;
+      if (av!==bv) return av-bv;
+      return (a.name||"").localeCompare(b.name||"");
+    });
+
+    bones.forEach((b,i)=>{
+      const o = document.createElement("option");
+      o.value = String(skeleton.bones.indexOf(b));
+      o.textContent = b.name || `Bone ${i}`;
+      boneSel.appendChild(o);
+      if (!initialBoneRot.has(b)) initialBoneRot.set(b, b.quaternion.clone());
+    });
+    if (skeleton.bones.length) boneSel.value = boneSel.options[0].value;
+    rx.value = "0"; ry.value = "0"; rz.value = "0";
+    setBoneRotationFromUI();
+  }
+  function setBoneRotationFromUI(){
+    const idx = parseInt(boneSel.value||"-1",10);
+    if (!skeleton || isNaN(idx) || !skeleton.bones[idx]) return;
+    const b = skeleton.bones[idx];
+    const ex = THREE.MathUtils.degToRad(parseFloat(rx.value)||0);
+    const ey = THREE.MathUtils.degToRad(parseFloat(ry.value)||0);
+    const ez = THREE.MathUtils.degToRad(parseFloat(rz.value)||0);
+    const qDelta = new THREE.Quaternion().setFromEuler(new THREE.Euler(ex,ey,ez,"XYZ"));
+    const qBase = initialBoneRot.get(b) || new THREE.Quaternion();
+    b.quaternion.copy(qBase).multiply(qDelta);
+  }
+  function zeroSelectedBone(){
+    const idx = parseInt(boneSel.value||"-1",10);
+    if (!skeleton || isNaN(idx) || !skeleton.bones[idx]) return;
+    const b = skeleton.bones[idx];
+    const qb = initialBoneRot.get(b);
+    if (qb) b.quaternion.copy(qb);
+    rx.value="0"; ry.value="0"; rz.value="0";
+  }
+  function resetAllBonesToInitial(){
+    if (!skeleton) return;
+    skeleton.bones.forEach(b=>{
+      const q0 = initialBoneRot.get(b);
+      if (q0) b.quaternion.copy(q0);
+    });
+    JOINT_BIND.forEach(obj=>{
+      if (obj?.bone) obj.qBind = obj.bone.quaternion.clone();
+    });
+  }
+
+  /* ===== Rig profile & axis ===== */
+  let RIG_PROFILE = 'generic';
+  function detectRigProfile(){
+    const names = skeleton?.bones.map(b=>b.name.toLowerCase()).join(' ') || '';
+    if (/\bmixamorig\b/.test(names)) RIG_PROFILE = 'mixamo';
+    else RIG_PROFILE = 'generic';
+    log(`Rig profile: ${RIG_PROFILE}`);
+  }
+  function axisFor(profile, key, defAxis){
+  if (profile==='mixamo'){
+    const map = {
+      sh_fe_l:'x', sh_fe_r:'x',
+      sh_aa_l:'z', sh_aa_r:'-z',
+      sh_irer_l:'y', sh_irer_r:'y',
+      el_fe_l:'x', el_fe_r:'x',
+      fa_ps_l:'y', fa_ps_r:'y',
+      wr_ps_l:'y', wr_ps_r:'y',
+      wr_fe_l:'x', wr_fe_r:'x',
+      wr_ru_l:'z', wr_ru_r:'z',
+      hip_fe_l:'x', hip_fe_r:'x',
+      hip_aa_l:'z', hip_aa_r:'z',
+      hip_irer_l:'y', hip_irer_r:'y',
+      knee_fe_l:'x', knee_fe_r:'x',
+      ankle_dfpf_l:'x', ankle_dfpf_r:'x',
+      foot_invev_l:'z', foot_invev_r:'z',
+      trunk_fe:'x', trunk_lat:'z', trunk_rot:'y',
+      cerv_fe:'x',  cerv_lat:'z',  cerv_rot:'y',
+      clavicle_L:'z', clavicle_R:'-z',
+    };
+    if (key in map) return map[key];
+  }
+
+  // --- ROMAN rig wrist axes are swapped vs generic plane assumptions ---
+  const mk = (typeof _inferModelKey === "function") ? _inferModelKey() : "";
+  if (mk === "Roman") {
+    const romanAxis = {
+      wr_fe_l: "z", wr_fe_r: "z",
+      wr_ru_l: "x", wr_ru_r: "x",
+    };
+    if (key in romanAxis) return romanAxis[key];
+  }
+
+  return defAxis;
+}
+
+  /* ===== Bone finding ===== */
+  const EXCLUDE = /(pelvis|root|scapula)/i;
+  function sideRegex(side){
+    if (!side) return [/.*/];
+    return side==='l'
+      ? [/\bleft\b/i, /\b_left\b/i, /\.l\b/i, /_l\b/i, /\bl\b(?![a-z])/i, /mixamorig:.*left/i]
+      : [/\bright\b/i, /\b_right\b/i, /\.r\b/i, /_r\b/i, /\br\b(?![a-z])/i, /mixamorig:.*right/i];
+  }
+  function findBoneBy(cfg){
+    if (!skeleton) return null;
+    const names = skeleton.bones.map(b=>b.name.toLowerCase());
+    const sideREs = sideRegex(cfg.side);
+
+    const HINTS = cfg.hints || [];
+    const preferred = (/^trunk_/.test(cfg.key)) ? [/^spine01$/] :
+                      (/cerv_/.test(cfg.key)) ? [/^head$/, /^neck$/] : [];
+    const tryList = preferred.length ? [...preferred, ...HINTS] : HINTS;
+
+    for (const cand of tryList){
+      for (let i=0;i<names.length;i++){
+        if (EXCLUDE.test(names[i])) continue;
+        if (cfg.side && !sideREs.some(r=>r.test(names[i])) ) continue;
+        if (cand.test(names[i])) return skeleton.bones[i];
+      }
+    }
+    if (!cfg.side){
+      for (const cand of tryList){
+        for (let i=0;i<names.length;i++){
+          if (EXCLUDE.test(names[i])) continue;
+          if (cand.test(names[i])) return skeleton.bones[i];
+        }
+      }
+    }
+    return null;
+  }
+
+  /* ===== DRUJ proxy (kept) ===== */
+  const DRUJ = { l:null, r:null };
+  function ensureDRUJProxy(side){
+    if (!skeleton) return null;
+    if (DRUJ[side]) return DRUJ[side];
+    const handCfg = { side, hints:[/hand|wrist/i] };
+    let hand = findBoneBy(handCfg);
+    if (!hand) return null;
+    const pivot = new THREE.Object3D();
+    const parent = hand.parent; if (!parent) return null;
+    parent.add(pivot);
+    pivot.position.copy(hand.position);
+    pivot.quaternion.copy(hand.quaternion);
+    pivot.scale.copy(hand.scale);
+    pivot.add(hand);
+    hand.position.set(0,0,0); hand.quaternion.identity(); hand.scale.set(1,1,1);
+    initialBoneRot.set(pivot, pivot.quaternion.clone());
+    DRUJ[side] = { pivot };
+    log(`Created DRUJ proxy for ${side.toUpperCase()}`);
+    return DRUJ[side];
+  }
+
+  const JOINT_BIND = new Map();
+  function resolveBind(key,cfg){
+    // --- Clavicle fallback: try real clavicle, else shoulder/collar, else upperarm parent
+if (/^clavicle_/.test(key)) {
+    const side = /_L$/.test(key) ? 'l' : 'r';
+  // try direct clavicle/collar/shoulder
+  let bone = findBoneBy({ side, hints:[/clavicle|collar|shoulder/i], key });
+  if (!bone) {
+    // fallback: take upperarm (humerus) and use its parent as a pseudo-clavicle
+    const upper = findBoneBy({ side, hints:[/upperarm|humerus/i], key });
+    bone = upper && upper.parent ? upper.parent : upper;
+  }
+  if (bone) {
+    const qBind = (initialBoneRot.get(bone) || bone.quaternion.clone()).clone();
+    const axis = axisFor(RIG_PROFILE, key, 'z'); // allow '-z' mapping
+    const obj = { bone, qBind, axis };
+    JOINT_BIND.set(key, obj);
+    log(`Bound ${key} → ${bone.name} (axis ${axis}) [clavicle-fallback]`);
+    return obj;
+  } else {
+    log(`No bind for ${key} (clavicle fallback failed)`);
+    return null;
+  }
+}
+
+    if (JOINT_BIND.has(key)) return JOINT_BIND.get(key);
+    if (/^trunk_/.test(key)) {
+      const b = getExactBoneByName('spine01');
+      if (b) {
+        const qBind = (initialBoneRot.get(b) || b.quaternion.clone()).clone();
+        const axis = axisFor(RIG_PROFILE, key, ({sagittal:'x', frontal:'z', transverse:'y'})[cfg.plane] || 'x');
+        const obj = { bone: b, qBind, axis };
+        JOINT_BIND.set(key, obj);
+        log(`Bound ${key} → spine01 (axis ${axis}) [hard-bind]`);
+        return obj;
+      }
+    }
+    let bone = findBoneBy({...cfg, key});
+    if ((!bone) && (key==='wr_ps_l' || key==='fa_ps_l')) { const p=ensureDRUJProxy('l'); bone=p&&p.pivot; }
+    if ((!bone) && (key==='wr_ps_r' || key==='fa_ps_r')) { const p=ensureDRUJProxy('r'); bone=p&&p.pivot; }
+    if (!bone) { log(`No bind for ${key}`); return null; }
+    const qBind = (initialBoneRot.get(bone) || bone.quaternion.clone()).clone();
+    const baseAxis = ({sagittal:'x',frontal:'z',transverse:'y'})[cfg.plane] || 'x';
+    const axis = axisFor(RIG_PROFILE, key, baseAxis);
+    const obj = {bone, qBind, axis};
+    JOINT_BIND.set(key,obj);
+    log(`Bound ${key} → ${bone.name} (axis ${axis})`);
+    return obj;
+  }
+
+function freezeBindBaseFor(key, cfg) {
+  const b = resolveBind(key, cfg);
+  if (!b) return;
+  b.qBind = b.bone.quaternion.clone();
+}
+
+
+    function applyPairAngle(key, cfg, deg) {
+  const bind = resolveBind(key, cfg);
+  if (!bind) return;
+
+  const { bone, qBind, axis: rawAxis } = bind;
+
+  // --- Right-shoulder rotation sign corrections ---
+  if (key === 'sh_irer_r') deg = -deg;          // Shoulder IR/ER
+  if (key === 'sh_aa_r')  deg = -deg;           // Shoulder Abd/Add (reverse direction)
+
+    // --- Right-wrist direction fixes ---
+  if (key === 'wr_ps_r') deg = -deg;  // flip pronation/supination
+  if (key === 'wr_ru_r') deg = -deg;  // flip radial/ulnar deviation
+
+  // --- ROMAN: wrist flex/ext sign is flipped ---
+  const mk = (typeof _inferModelKey === "function") ? _inferModelKey() : "";
+  if (mk === "Roman" && (key === "wr_fe_l" || key === "wr_fe_r")) deg = -deg;    
+
+  const rad = THREE.MathUtils.degToRad(deg + (cfg.neutral || 0));
+
+  // Handle flipped axis (e.g. "-z" for mirrored rig)
+  let x = 0, y = 0, z = 0;
+  let flip = 1;
+  let axis = rawAxis || 'z'; // use mapped axis; default 'z' if missing
+  if (axis.startsWith('-')) {
+    flip = -1;
+    axis = axis.slice(1);
+  }
+
+  const r = flip * rad;
+  if (axis === 'x') x = r;
+  if (axis === 'y') y = r;
+  if (axis === 'z') z = r;
+  if (axis === 'bone') {
+  // rotate around the bone's own local Z axis
+  bone.rotateZ(r);
+  return;
+}
+
+  const e = new THREE.Euler(x, y, z, "XYZ");
+  const qDelta = new THREE.Quaternion().setFromEuler(e);
+  bone.quaternion.copy(qBind).multiply(qDelta);
+
+  // --- Debug: confirm right-shoulder direction ---
+  if (CURRENT_ACTION?.key === "sh_aa_r") {
+    console.log(
+      `Right-shoulder: ${bone.name}, axis: ${axis}, flipped: ${flip === -1}, deg=${deg}, r=${r.toFixed(3)}`
+    );
+  }
+}
+
+
+  /* ===== Motions (paired configs; UI splits) ===== */
+  const UPPER = [
+    {key:'trunk_fe',  pair:'Trunk — Flex / Ext',            side:'', plane:'sagittal',   neutral:0, min:-60, max:80,  hints:[/^spine01$/i]},
+    {key:'trunk_lat', pair:'Trunk — Lateral Bend (L / R)',  side:'', plane:'frontal',    neutral:0, min:-40, max:40,  hints:[/^spine01$/i]},
+    {key:'trunk_rot', pair:'Trunk — Rotation (L / R)',      side:'', plane:'transverse', neutral:0, min:-45, max:45,  hints:[/^spine01$/i]},
+
+    {key:'cerv_fe',   pair:'Cervical Flex / Ext',           side:'', plane:'sagittal',  neutral:0, min:-60, max:50, hints:[/^head$/i]},
+    {key:'cerv_lat',  pair:'Cervical Lat Flex (L / R)',          side:'', plane:'frontal',    neutral:0, min:-45,  max:45,  hints:[/^head$/i]},
+    {key:'cerv_rot',  pair:'Cervical Rotation (L / R)',          side:'', plane:'transverse', neutral:0, min:-70,  max:70,  hints:[/^head$/i]},
+
+    {key:'clavicle_L', pair:'Clavicle L — Elevation / Depression', side:'l', plane:'frontal', neutral:0, min:-20, max:45, hints:[/clavicle|collar|shoulder|upperarm/i]},
+    {key:'clavicle_R', pair:'Clavicle R — Elevation / Depression', side:'r', plane:'frontal', neutral:0, min:-20, max:45, hints:[/clavicle|collar|shoulder|upperarm/i]},
+
+    {key:'sh_fe_l',   pair:'Shoulder L — Flex / Ext',            side:'l', plane:'sagittal',  neutral:0, min:-60,  max:180, hints:[/upperarm|humerus|shoulder|arm(?!.*lower)/i]},
+    {key:'sh_fe_r',   pair:'Shoulder R — Flex / Ext',            side:'r', plane:'sagittal',  neutral:0, min:-60,  max:180, hints:[/upperarm|humerus|shoulder|arm(?!.*lower)/i]},
+    {key:'sh_aa_l',   pair:'Shoulder L — Abd / Add',             side:'l', plane:'frontal',   neutral:0, min:-30,  max:180, hints:[/upperarm|humerus|shoulder|arm(?!.*lower)/i]},
+    {key:'sh_aa_r',   pair:'Shoulder R — Abd / Add',             side:'r', plane:'frontal',   neutral:0, min:-30,  max:180, hints:[/upperarm|humerus|shoulder|arm(?!.*lower)/i]},
+    {key:'sh_irer_l', pair:'Shoulder L — External / Internal', side:'l', plane:'transverse', neutral:0, min:-50, max:70, hints:[/upperarm_L/i]},
+    {key:'sh_irer_r', pair:'Shoulder R — External / Internal', side:'r', plane:'transverse', neutral:0, min:-50, max:70, hints:[/upperarm_R/i]},
+
+    // ELBOW — fix so Flexion moves (150), Extension small (10)
+    {key:'el_fe_l',   pair:'Elbow L — Flex / Ext',               side:'l', plane:'sagittal',  neutral:0, min:-10,  max:150, hints:[/lowerarm|forearm|ulna|radius/i]},
+    {key:'el_fe_r',   pair:'Elbow R — Flex / Ext',               side:'r', plane:'sagittal',  neutral:0, min:-10,  max:150, hints:[/lowerarm|forearm|ulna|radius/i]},
+
+     // ===== Wrist — corrected direction for right side =====
+    {key:'wr_ps_l', pair:'DRU L — Pronation / Supination', side:'l', plane:'transverse', neutral:0, min:-95, max:85, hints:[/wrist|hand|forearm|radius|ulna/i]},
+    {key:'wr_ps_r', pair:'DRU R — Pronation / Supination', side:'r', plane:'transverse', neutral:0, min:-95, max:85, invert:true, hints:[/wrist|hand|forearm|radius|ulna/i]}, // 🔁 flipped
+
+    {key:'wr_fe_l', pair:'Wrist L — Flex / Ext', side:'l', plane:'sagittal', neutral:0, min:-70, max:80, hints:[/wrist|hand/i]},
+    {key:'wr_fe_r', pair:'Wrist R — Flex / Ext', side:'r', plane:'sagittal', neutral:0, min:-70, max:80, hints:[/wrist|hand/i]},
+
+    {key:'wr_ru_l', pair:'Wrist L — Radial / Ulnar Dev', side:'l', plane:'frontal', neutral:0, min:-40, max:20, hints:[/wrist|hand/i]},
+    {key:'wr_ru_r', pair:'Wrist R — Radial / Ulnar Dev', side:'r', plane:'frontal', neutral:0, min:-40, max:20, invert:true, hints:[/wrist|hand/i]}, // 🔁 flipped
+
+];   
+  const LOWER = [
+    {key:'hip_fe_l',   pair:'Hip L — Flex / Ext',                side:'l', plane:'sagittal',  neutral:0, min:-30,  max:120, hints:[/thigh|femur/i]},
+    {key:'hip_fe_r',   pair:'Hip R — Flex / Ext',                side:'r', plane:'sagittal',  neutral:0, min:-30,  max:120, hints:[/thigh|femur/i]},
+    {key:'hip_aa_l',   pair:'Hip L — Abd / Add',                 side:'l', plane:'frontal',   neutral:0, min:-30,  max:45,  hints:[/thigh|femur/i]},
+    {key:'hip_aa_r', pair:'Hip R — Add / Abd', side:'r', plane:'frontal', neutral:0, min:-30, max:45, hints:[/thigh|femur/i]},
+    {key:'hip_irer_l', pair:'Hip L — Internal / External',       side:'l', plane:'transverse',neutral:0, min:-45,  max:45,  hints:[/thigh|femur/i]},
+    {key:'hip_irer_r', pair:'Hip R — Internal / External',       side:'r', plane:'transverse',neutral:0, min:-45,  max:45,  hints:[/thigh|femur/i]},
+    {key:'knee_fe_l', pair:'Knee L — Ext / Flex', side:'l', plane:'sagittal', neutral:0, min:-55, max:150, hints:[/calf|tibia|fibula|shin/i]},
+    {key:'knee_fe_r', pair:'Knee R — Ext / Flex', side:'r', plane:'sagittal', neutral:0, min:-55, max:150, hints:[/calf|tibia|fibula|shin/i]},
+    {key:'ankle_dfpf_l', pair:'Ankle L — Dorsi / Plantarflex',   side:'l', plane:'sagittal',  neutral:0, min:-20,  max:50,  hints:[/ankle|foot|talus|tarsal/i]},
+    {key:'ankle_dfpf_r', pair:'Ankle R — Dorsi / Plantarflex',   side:'r', plane:'sagittal',  neutral:0, min:-20,  max:50,  hints:[/ankle|foot|talus|tarsal/i]},
+    {key:'foot_invev_l', pair:'Foot L — Inversion / Eversion',   side:'l', plane:'frontal',   neutral:0, min:-20,  max:35,  hints:[/foot|calcaneus|metatars|heel/i]},
+    {key:'foot_invev_r', pair:'Foot R — Inversion / Eversion',   side:'r', plane:'frontal',   neutral:0, min:-20,  max:35,  hints:[/foot|calcaneus|metatars|heel/i]},
+  ];
+
+function updateModelPose(pose) {
+    if (!model) return;  
+
+    const PI_HALF = Math.PI / 2;
+
+    // --- 1. GLOBAL RESET (Ensures previous bone bends are cleared) ---
+    resetAllBonesToInitial();
+    applyAnatomicBaseline();
+    
+    // Reset global model properties
+    model.rotation.set(0, 0, 0, 'XYZ');  
+    model.position.set(0, 0, 0.6); // Reset Z to default 0.6
+
+    // --- 2. POSE LOGIC (Your working logic, plus Sitting) ---
+    if (pose === "standing") {
+        // Position remains at default (0, 0, 0.6)
+    } else if (pose === "supine") {
+        // Lay back 90 degrees (back on floor)
+        model.rotation.x = -PI_HALF; 
+        model.rotation.y = 0;
+    } else if (pose === "prone") {
+        // Lay back 90 degrees AND rotate 180 degrees yaw (face down)
+        model.rotation.x = -PI_HALF;
+        model.rotation.y = Math.PI;
+    } else if (pose === "sitting") { 
+        // Flex Hips and Knees to  degrees on both legs
+        setPair('hip_fe_l', 75);
+        setPair('hip_fe_r', 75);
+        setPair('knee_fe_l', -90);
+        setPair('knee_fe_r', -90);
+        
+        // Move model down to sit on the ground plane
+        model.position.y = -0.4; 
+    }
+    
+    controls.update();
+    log(`Model set to ${pose.toUpperCase()} position.`);
+}
+positionSel.onchange = () => {
+    updateModelPose(positionSel.value);
+    
+    // The selection is NOT cleared, allowing the Action menu to remain active.
+    syncActionUI(true); 
+};
+  let CURRENT = UPPER;
+
+  function dirEntriesFromPair(cfg){
+    const absMin = Math.abs(cfg.min);
+    const maxPos = cfg.max;
+    const out = [];
+    const push = (label, sign, maxVal) => out.push({ key: cfg.key, cfg, label, sign, max: maxVal });
+
+    // Cervical — keep exact labels
+    if (cfg.key === 'cerv_fe'){
+      push('Cervical Flexion',  +1, maxPos);
+      push('Cervical Extension', -1, absMin);
+      return out;
+    }
+    if (cfg.key === 'cerv_lat'){
+      push('Cervical Lateral Flexion — Left', -1, absMin);
+      push('Cervical Lateral Flexion — Right',  +1, maxPos);
+      return out;
+    }
+    if (cfg.key === 'cerv_rot'){
+      push('Cervical Rotation — Right',  -1, absMin);
+      push('Cervical Rotation — Left', +1, maxPos);
+      return out;
+    }
+    if (cfg.key === 'clavicle_L'){
+  push('Clavicle L — Elevation', +1, maxPos);
+  push('Clavicle L — Depression', -1, absMin);
+  return out;
+}
+if (cfg.key === 'clavicle_R'){
+  push('Clavicle R — Elevation', -1, maxPos);
+  push('Clavicle R — Depression', +1, absMin);
+  return out;
+}
+
+    // Shoulder Abd/Add — Right side normal orientation
+   if (cfg.key==='sh_aa_r'){
+  push('Shoulder R — Abduction', +1, maxPos);
+  push('Shoulder R — Adduction', -1, absMin);
+  return out;
+}
+    // Shoulder R IR/ER — explicit labels
+if (cfg.key === 'sh_irer_r'){
+  push('Shoulder R — Internal Rotation', +1, maxPos);
+  push('Shoulder R — External Rotation', -1, absMin);
+  return out;
+}
+
+// Shoulder L IR/ER — explicit labels
+if (cfg.key === 'sh_irer_l'){
+  push('Shoulder L — External Rotation', +1, maxPos);
+  push('Shoulder L — Internal Rotation', -1, absMin);
+  return out;
+}
+
+ // === Hip Abduction / Adduction explicit labels ===
+if (cfg.key === 'hip_aa_l'){
+  push('Hip L — Abduction', +1, maxPos);
+  push('Hip L — Adduction', -1, absMin);
+  return out;
+}
+if (cfg.key === 'hip_aa_r'){
+  push('Hip R — Abduction', -1, absMin);
+  push('Hip R — Adduction', +1, maxPos);
+  return out;
+}
+
+// --- Left Hip fix:  Internal ↔ External labels ---
+if (cfg.key === 'hip_irer_l') {
+  // External Rotation (positive)
+  push(cfg.pair.replace(/—.*$/, '— Internal Rotation'), +1, maxPos);
+
+  // Internal Rotation (negative)
+  push(cfg.pair.replace(/—.*$/, '— External Rotation'), -1, absMin);
+
+  return out;
+}
+
+// --- Right Hip fix:  Internal ↔ External labels ---
+if (cfg.key === 'hip_irer_r') {
+  // External Rotation (positive)
+  push(cfg.pair.replace(/—.*$/, '— Internal Rotation'), -1, maxPos);
+
+  // Internal Rotation (negative)
+  push(cfg.pair.replace(/—.*$/, '— External Rotation'), +1, absMin);
+
+  return out;
+}
+
+// --- Left Foot fix: 
+if (cfg.key === 'foot_invev_l') {
+  push(cfg.pair.replace(/—.*$/, '— Inversion'), -1, maxPos);
+  push(cfg.pair.replace(/—.*$/, '— Eversion'), +1, absMin);
+  return out;
+}
+    if (/^knee_fe_/.test(cfg.key)) {
+  // 🔁 Knee bending = Flexion (+), straightening = Extension (−)
+  push(cfg.pair.replace(/—.*$/, '— Flexion'), -1, maxPos);
+  push(cfg.pair.replace(/—.*$/, '— Extension'), +1, absMin);
+  }
+  else if (/_fe_/.test(cfg.key) || cfg.key==='trunk_fe'){
+  push(cfg.pair.replace(/—.*$/, '— Flexion'), +1, maxPos);
+  push(cfg.pair.replace(/—.*$/, '— Extension'), -1, absMin);
+    } else if (/_aa_/.test(cfg.key)){
+      push(cfg.pair.replace(/—.*$/, '— Abduction'), +1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Adduction'), -1, absMin);
+    } else if (/_irer_/.test(cfg.key)){
+      push(cfg.pair.replace(/—.*$/, '— Internal Rotation'), +1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— External Rotation'), -1, absMin);
+    } else if (cfg.key==='trunk_lat'){
+      push(cfg.pair.replace(/—.*$/, '— Right Lateral Flexion'), +1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Left Lateral Flexion'), -1, absMin);
+    } else if (cfg.key==='trunk_rot'){
+      push(cfg.pair.replace(/—.*$/, '— Left Rotation'), +1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Right Rotation'), -1, absMin);
+    } else if (/wr_ps_/.test(cfg.key)){
+      // SWAP LABELS per your report: + == PRONATION, - == SUPINATION
+      push(cfg.pair.replace(/—.*$/, '— Pronation'), +1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Supination'), -1, absMin);
+    } else if (/wr_fe_/.test(cfg.key)){
+      push(cfg.pair.replace(/—.*$/, '— Flexion'), +1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Extension'), -1, absMin);
+    } else if (/wr_ru_/.test(cfg.key)){
+      // SWAP LABELS per your report: + == RADIAL, - == ULNAR
+      push(cfg.pair.replace(/—.*$/, '— Radial Deviation'), +1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Ulnar Deviation'), -1, absMin);
+    } else if (/ankle_dfpf_/.test(cfg.key)){
+      push(cfg.pair.replace(/—.*$/, '— Plantarflexion'), -1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Dorsiflexion'), +1, absMin);
+    } else if (/foot_invev_/.test(cfg.key)){
+      push(cfg.pair.replace(/—.*$/, '— Eversion'), -1, maxPos);
+      push(cfg.pair.replace(/—.*$/, '— Inversion'), +1, absMin);
+    }
+    return out;
+  }
+
+function buildSeparatedCatalog(list){
+    const cat = {};
+    const add = (grp, entries)=>{ if (!cat[grp]) cat[grp]=[]; cat[grp].push(...entries); };
+    
+    list.forEach(cfg=>{
+      if (/^trunk_/.test(cfg.key)) add('Trunk', dirEntriesFromPair(cfg));
+      else if (/^cerv_/.test(cfg.key)) add('Cervical', dirEntriesFromPair(cfg));
+      else if (false && /^clavicle_/.test(cfg.key)) add('Clavicle', dirEntriesFromPair(cfg)); 
+      else if (/^sh_/.test(cfg.key)) add('Shoulder', dirEntriesFromPair(cfg));
+      else if (/^el_/.test(cfg.key)) add('Elbow', dirEntriesFromPair(cfg));
+      
+      // === NEW LOGIC START ===
+      // Catch Pronation/Supination FIRST and give it the DRU Heading
+      else if (/^wr_ps_/.test(cfg.key)) add('Distal Radio Ulnar (DRU)', dirEntriesFromPair(cfg));
+      
+      // Catch remaining Wrist items (Flex/Ext, Dev) and give them the Wrist Heading
+      else if (/^wr_/.test(cfg.key)) add('Wrist', dirEntriesFromPair(cfg));
+      // === NEW LOGIC END ===
+
+      else if (/^hip_/.test(cfg.key)) add('Hip', dirEntriesFromPair(cfg));
+      else if (/^knee_/.test(cfg.key)) add('Knee', dirEntriesFromPair(cfg));
+      else if (/^ankle_/.test(cfg.key)) add('Ankle', dirEntriesFromPair(cfg));
+      else if (/^foot_/.test(cfg.key)) add('Foot', dirEntriesFromPair(cfg));
+    });
+    return cat;
+  }
+
+  let CURRENT_ACTION = null;
+  function cfgFromKey(k){ return [...UPPER,...LOWER].find(x=>x.key===k) || null; }
+
+function fillActionMenu() {
+
+  // --- No region selected → no actions ---
+  if (!regionSel.value) {
+    actionSel.innerHTML = "";
+    actionSel.disabled = true;
+    actionDeg.disabled = true;
+    CURRENT_ACTION = null;
+    return;
+  }
+
+  // --- Region selected → rebuild action menu ---
+  actionSel.innerHTML = "";
+  actionSel.disabled = false;
+
+  const ph = document.createElement("option");
+  ph.value = "";
+  ph.textContent = "(Select a motion…)";
+  actionSel.appendChild(ph);
+
+
+    // CURRENT now holds ONLY the motions for the selected region
+    const list = CURRENT || [];
+    const catalog = buildSeparatedCatalog(list);
+    Object.keys(catalog).forEach(group=>{
+      const og = document.createElement("optgroup"); og.label = group;
+      catalog[group].forEach(entry=>{
+        const opt = document.createElement("option");
+        opt.value = `sep:${entry.key}:${entry.sign}:${entry.max}`;
+        opt.textContent = entry.label;
+        og.appendChild(opt);
+      });
+      actionSel.appendChild(og);
+    });
+
+    actionSel.value = "";
+    pairLabel.textContent = "Angle (°)";
+    actionDeg.disabled = true;
+    CURRENT_ACTION = null;
+  }
+
+function syncActionUI(forceZero=false){
+    if (!CURRENT_ACTION){
+      actionDeg.disabled = true;
+      pairLabel.textContent = "Angle (°)";
+      return;
+    }
+    pairLabel.textContent = "Angle (°)";
+    actionDeg.min = "0";
+    actionDeg.max = String(CURRENT_ACTION.max);
+    if (forceZero) actionDeg.value = "0";
+    actionDeg.disabled = false;
+}
+
+
+regionSel.onchange = () => {
+  const r = regionSel.value;
+
+  if (r === "cervical_spine") {
+    CURRENT = UPPER.filter(x =>
+      x.key.startsWith("cerv_")
+    );
+  }
+  else if (r === "thoracic_lumbar_spine") {
+    CURRENT = UPPER.filter(x =>
+      x.key.startsWith("trunk_")
+    );
+  }
+  else if (r === "glenohumeral_joint") {
+    CURRENT = UPPER.filter(x =>
+      x.key.startsWith("sh_")
+    );
+  }
+  else if (r === "elbow_radioulnar") {
+    CURRENT = UPPER.filter(x =>
+      x.key.startsWith("el_") ||
+      x.key.startsWith("wr_ps_")
+    );
+  }
+else if (r === "wrist") {
+    // LOGIC: Show items starting with "wr_" (Wrist) 
+    // BUT EXCLUDE items starting with "wr_ps_" (Pronation/Supination)
+    CURRENT = UPPER.filter(x => 
+      x.key.startsWith("wr_") && !x.key.startsWith("wr_ps_")
+    );
+  }
+  else if (r === "hip") {
+    CURRENT = LOWER.filter(x =>
+      x.key.startsWith("hip_")
+    );
+  }
+  else if (r === "knee") {
+    CURRENT = LOWER.filter(x =>
+      x.key.startsWith("knee_")
+    );
+  }
+  else if (r === "talocrural_ankle") {
+    CURRENT = LOWER.filter(x =>
+      x.key.startsWith("ankle_")
+    );
+  }
+  else if (r === "transverse_tarsal_subtalar") {
+    CURRENT = LOWER.filter(x =>
+      x.key.startsWith("foot_")
+    );
+  }
+  else {
+    CURRENT = [];
+  }
+
+  fillActionMenu();
+  actionDeg.value = "0";
+  actionDeg.disabled = true;
+  CURRENT_ACTION = null;
+};
+
+positionSel.onchange = () => {
+    updateModelPose(positionSel.value);
+    
+    // This resets the slider visually but preserves the selected menu item.
+    syncActionUI(true);
+    
+    // === FIX: Re-trigger change event to set the joint baseline from the NEW pose ===
+    // We check 'actionSel.value' to ensure the menu content is preserved when changing poses.
+    if (actionSel.value) { 
+        actionSel.dispatchEvent(new Event('change'));
+    }
+};
+  // === Anatomic preset (preloaded) ===
+// ===== Model-specific Anatomic Baseline =====
+const ANAT_PRESETS = {
+  Roma: { addL:-32, psL:-2, wpsL:-73, hipAA: 1, spine01Flex: 5 },  
+  Roman:  { addL: -64, psL:-4, wpsL:-73, hipAA: 10, spine01Flex: 5 }   //
+};
+
+let ANAT = { ...ANAT_PRESETS.Roman };
+
+function _inferModelKey(){
+  const sel = document.getElementById("modelSel");
+  if (sel && (sel.value === "Roman" || sel.value === "Roma")) return sel.value;
+
+  const u = new URL(location.href);
+  const q = (u.searchParams.get("model") || "").trim();
+  if (q === "Roman" || q === "Roma") return q;
+
+  // fallback: infer from resolved MODEL_URL
+  if (typeof MODEL_URL === "string" && /\/Roma_/i.test(MODEL_URL)) return "Roma";
+  return "Roman";
+}
+
+function setAnatForModel(key){
+  const k = ANAT_PRESETS[key] ? key : "Roman";
+  ANAT = { ...ANAT_PRESETS[k] };
+}
+
+// run once on startup
+setAnatForModel(_inferModelKey());
+
+// ensure ANAT updates BEFORE your existing modelSel change handler runs
+document.getElementById("modelSel")?.addEventListener(
+  "change",
+  (e) => setAnatForModel(e.target.value),
+  { capture: true }
+);
+function applyAnatomicBaseline(){
+  // 🦴 Apply identical baselines to both arms (no mirroring)
+  setPair('sh_aa_l', ANAT.addL);
+  setPair('sh_aa_r', ANAT.addL);
+  setPair('spine01_fe', ANAT.spine01Flex);
+  setPair('hip_aa_l',  ANAT.hipAA);
+  setPair('hip_aa_r', -ANAT.hipAA);
+
+  // Forearm & wrist PS — apply same orientation to both
+  setPair('fa_ps_l', ANAT.psL);
+  setPair('fa_ps_r', ANAT.psL);
+  setPair('wr_ps_l', ANAT.wpsL);
+  setPair('wr_ps_r', -ANAT.wpsL);
+
+  log(`Anatomic baseline applied (same for L/R) → ADD ${ANAT.addL}, Forearm PS ${ANAT.psL}, Wrist PS ${ANAT.wpsL}`);
+}
+
+// Always return to anatomic when changing actions; then freeze bind
+  actionSel.addEventListener("change", ()=>{
+    
+    // 1. Full Reset (This clears the model's sitting bones)
+    resetAllBonesToInitial();
+    applyAnatomicBaseline();
+    
+    // === RESTORE SITTING POSE IF ACTIVE ===
+    if (positionSel.value === 'sitting') {
+        // Apply Hip and Knee Flexion again to maintain the sitting posture
+        setPair('hip_fe_l', 90);
+        setPair('hip_fe_r', 90);
+        setPair('knee_fe_l', -90);
+        setPair('knee_fe_r', -90);
+        log(`Restoring Sitting Pose for action start.`);
+    }
+    CURRENT_ACTION = null;
+    // ... the rest of the function continues from here ...
+    const v = actionSel.value || "";
+    if (v.startsWith("sep:")){
+      const [, key, signStr, maxStr] = v.split(":");
+      const cfg = cfgFromKey(key);
+      CURRENT_ACTION = { mode:'sep', key, cfg, sign: parseInt(signStr,10), max: parseFloat(maxStr), label: actionSel.options[actionSel.selectedIndex].textContent };
+      freezeBindBaseFor(key,cfg);
+
+// Shoulder IR/ER → set elbow to 90° baseline immediately
+if (key==='sh_irer_l' || key==='sh_irer_r'){
+  const side = key.endsWith('_l') ? 'l' : 'r';
+  setPair(`el_fe_${side}`, 90); // elbow flexion to 90°
+  setPair(`wr_ps_${side}`, 9);
+  setPair(`clavicle_${side.toUpperCase()}`, side==='r' ? -35 : 35); 
+  log(`Elbow ${side.toUpperCase()} set to 90° for shoulder rotation setup.`);
+}
+
+// === FINALIZED WRIST & DRU POSTURE SETUP (Fixing wr_fe_ Inversion) ===
+if (key.startsWith('wr_ps_') || key.startsWith('wr_fe_') || key.startsWith('wr_ru_')) {
+    const side = key.endsWith('_l') ? 'l' : 'r';
+    // This key (wr_ps_) is always used to apply the forearm rotation.
+    const rotationKey = `wr_ps_${side}`; 
+    let rotationAngle = 0;
+
+    // 1. COMMON SETUP: Flex Elbow to 90°
+    setPair(`el_fe_${side}`, 90); 
+
+    // 2. DETERMINE REQUIRED FOREARM ROTATION
+    if (key.startsWith('wr_ps_')) {
+        // DRU (P/S): Confirmed correct, both sides require 0° Anatomic start.
+        rotationAngle = 0; 
+        
+    } else if (key.startsWith('wr_fe_')) {
+        // FLEX/EXT: FIX APPLIED HERE. Must use inversion to mirror the correct Left side.
+        rotationAngle = (side === 'l') ? 45 : -45;
+
+    } else if (key.startsWith('wr_ru_')) {
+        // RAD/ULNAR DEV: Confirmed correct, this logic is preserved.
+        rotationAngle = (side === 'l') ? 45 : -45;
+    }
+
+    // 3. APPLY ROTATION & REBIND ZERO
+    // Apply the determined angle using the DRU key to stabilize the forearm.
+    setPair(rotationKey, rotationAngle);
+    
+    // Rebind the zero for the currently selected action (wr_fe, wr_ru, or wr_ps)
+    freezeBindBaseFor(key, cfg);
+    log(`Setup ${side.toUpperCase()} ${CURRENT_ACTION.label}: Elbow 90°, Forearm Start (${rotationAngle}°).`);
+} 
+
+// Hip IR/ER → set posture: hip flexion 95°, knee flexion 90°
+if (key==='hip_irer_l' || key==='hip_irer_r'){
+  const side = key.endsWith('_l') ? 'l' : 'r';
+  setPair(`hip_fe_${side}`, 95);   // hip flexed up for stable rotation
+  setPair(`knee_fe_${side}`, -90);  // knee flexed to 90°
+  // ✅ Re-bind baseline to the seated posture for THIS motion only
+  const b = resolveBind(key, cfg);
+  if (b) {
+    b.axis = 'y';                   // force correct axis for hip rotation
+    b.qBind = b.bone.quaternion.clone();  // <-- capture baseline AFTER posture
+  }
+  log(`Hip ${side.toUpperCase()} set to FE=95°, Knee ${side.toUpperCase()} to FE=90° for hip rotation setup.`);
+}
+      syncActionUI(true);
+      return;
+    }
+    syncActionUI(true);
+  });
+
+actionDeg.addEventListener("input", ()=> {
+  if (!CURRENT_ACTION) return;
+
+  let val = Math.max(0, Math.min(CURRENT_ACTION.max, parseFloat(actionDeg.value)||0));
+
+  // Anticollision cap (keep this early)
+  const cap = capFor(CURRENT_ACTION);
+  if (typeof cap === 'number' && val > cap){
+    val = cap;
+    actionDeg.value = String(val);
+    log(`Anticollision limit hit (${CURRENT_ACTION.label}): max ${cap}°`);
+  }
+
+  // --- TOKEN MODE RANGE CLAMP (reuses seated/standing pattern) --- CHECKPOINT
+  if (window.GONIO_TOKEN_MODE && window.GONIO_TOKEN_MODE.active){
+    const t = window.GONIO_TOKEN_MODE;
+
+    // explicit token window [min,max] if provided
+    if (typeof t.min === 'number' || typeof t.max === 'number'){
+      let tMin = (typeof t.min === 'number') ? t.min : 0;
+      let tMax = (typeof t.max === 'number') ? t.max : CURRENT_ACTION.max;
+
+      // keep inside this motion’s legal window
+      tMin = Math.max(0, tMin);
+      tMax = Math.min(CURRENT_ACTION.max, tMax);
+
+      if (val < tMin) val = tMin;
+      if (val > tMax) val = tMax;
+
+      actionDeg.value = String(val);
+      log(`Token clamp → ${tMin}–${tMax}° (${CURRENT_ACTION.label})`);
+    } else {
+      // no explicit window: fall back to seated/standing COLLIM cap
+      if (typeof cap === 'number' && val > cap){
+        val = cap;
+        actionDeg.value = String(val);
+        log(`Token anticollision clamp → ${cap}° (${CURRENT_ACTION.label})`);
+      }
+    }
+  }
+
+  // Signed degrees for the chosen direction line from original logic
+  let signed = CURRENT_ACTION.sign * val;
+
+  // === CASE ROM CLAMPS (CERVICAL + HIP) ===
+  if (window.GONIO_CASE_MODE && window.GONIO_CASE_MODE.active){
+    let impairmentKey = null;
+
+    // --- Cervical case (Case 1) ---
+    // 1. Cervical Lateral Flexion (Right vs Left)
+    if (CURRENT_ACTION.key === 'cerv_lat'){
+      if (CURRENT_ACTION.label.includes('Right')) {
+        impairmentKey = 'cervical_right_lat_flex';   // 20°
+      } else if (CURRENT_ACTION.label.includes('Left')) {
+        impairmentKey = 'cervical_left_lat_flex';    // 45°
+      }
+    }
+    // 2. Cervical Rotation (Right vs Left)
+    else if (CURRENT_ACTION.key === 'cerv_rot'){
+      if (CURRENT_ACTION.label.includes('Right')) {
+        impairmentKey = 'cervical_right_rotation';   // 30°
+      } else if (CURRENT_ACTION.label.includes('Left')) {
+        impairmentKey = 'cervical_left_rotation';    // 70°
+      }
+    }
+
+    // --- Hip case (Case 2: Maria J.) ---
+    // Right hip Flexion vs Extension (same paired control: hip_fe_r)
+    if (!impairmentKey && CURRENT_ACTION.key === 'hip_fe_r'){
+      if (signed > 0){
+        impairmentKey = 'hip_right_flexion';    // 50°
+      } else if (signed < 0){
+        impairmentKey = 'hip_right_extension';  // 5°
+      }
+    }
+
+    // Right hip Abduction only (adduction stays normal)
+    if (!impairmentKey && CURRENT_ACTION.key === 'hip_aa_r' && signed < 0){
+      impairmentKey = 'hip_right_abduction';    // 20°
+    }
+
+        // --- Trunk case (Case 3: Cluster Treatment) ---
+    // Trunk Flexion vs Extension (paired control: trunk_fe)
+    if (!impairmentKey && CURRENT_ACTION.key === 'trunk_fe'){
+      if (signed > 0){
+        impairmentKey = 'trunk_flexion';   // 20°
+      } else if (signed < 0){
+        impairmentKey = 'trunk_extension'; // 5°
+      }
+    }
+// Trunk Lateral Flexion (R/L share same limit 15°)
+    if (!impairmentKey && CURRENT_ACTION.key === 'trunk_lat'){
+      impairmentKey = 'trunk_lat';
+    }
+
+    // Trunk Rotation (R/L share same limit 20°)
+    if (!impairmentKey && CURRENT_ACTION.key === 'trunk_rot'){
+      impairmentKey = 'trunk_rot';
+    }
+    // Apply clamp if a key was found (using the magnitude 'val')
+    if (impairmentKey){
+      const magBefore = Math.abs(val);
+      const clamped   = clampAngleForCase(magBefore, impairmentKey);
+
+      if (clamped < magBefore){
+        val    = clamped;
+        signed = CURRENT_ACTION.sign * val;
+        actionDeg.value = String(clamped);
+        log(`Case clamp → ${clamped}° for ${impairmentKey} (${CURRENT_ACTION.label})`);
+      }
+    }
+  }
+
+
+
+// === DYNAMIC COUPLING: HIP FLEXION to KNEE FLEXION (Only for Non-Sitting) ===
+if (CURRENT_ACTION.key.startsWith('hip_fe_') && CURRENT_ACTION.sign > 0 && positionSel.value !== 'sitting') {
+    const side = CURRENT_ACTION.key.endsWith('_l') ? 'l' : 'r';
+    const HIP_COUPLING_START = 90; // Start coupling after 90 degrees of hip flex
+    
+    // Calculate the amount the hip has traveled past the 90 degree threshold
+    let coupledFlexion = Math.max(0, signed - HIP_COUPLING_START);
+    
+    // Scale the excess hip movement (max 30°) to full knee flexion (max 90°). Ratio is 3:1.
+    let kneeFlexion = coupledFlexion * 5; 
+
+    // Clamp the knee angle to ensure it doesn't exceed 150 degrees (max physical limit)
+    kneeFlexion = Math.min(150, Math.max(0, kneeFlexion));
+
+    // Apply the coupled knee flexion (using a NEGATIVE value as required by the knee_fe key)
+    setPair(`knee_fe_${side}`, -kneeFlexion); 
+    
+    // Only log if coupling is actually happening
+    if(coupledFlexion > 0) log(`Dynamic Knee Flexion: ${Math.round(kneeFlexion)}°`);
+    
+}
+
+// === DYNAMIC COUPLING: KNEE FLEXION to HIP FLEXION (Supine Only) ===
+if (CURRENT_ACTION.key.startsWith('knee_fe_') && CURRENT_ACTION.sign < 0 && positionSel.value === 'supine') {
+    const side = CURRENT_ACTION.key.endsWith('_l') ? 'l' : 'r';
+    const KNEE_COUPLING_START = 60; // start coupling once knee flexion passes ~60°
+
+    // Knee flexion is negative, so use its magnitude
+    const kneeFlexMag = Math.abs(signed);
+
+    // How far past the threshold?
+    let coupledFlexion = Math.max(0, kneeFlexMag - KNEE_COUPLING_START);
+
+    // Scale knee flexion “excess” into hip flexion (stronger than before)
+    // Up to ~60° hip flexion when knee is fully flexed
+    let hipFlexion = coupledFlexion * 0.75;
+
+    // Clamp hip angle so it doesn’t get crazy
+    hipFlexion = Math.min(60, Math.max(0, hipFlexion));
+
+    // Apply hip flexion (positive value for hip_fe key)
+    setPair(`hip_fe_${side}`, hipFlexion);
+
+    if (coupledFlexion > 0) log(`Dynamic Hip Flexion: ${Math.round(hipFlexion)}°`);
+}
+
+
+ // ----------------------------------------------------------------------
+ // === NEW: SITTING POSE ISOLATION (Keep Knee at 90) ===
+if (CURRENT_ACTION.key.startsWith('hip_fe_') && CURRENT_ACTION.sign > 0 && positionSel.value === 'sitting') {
+    const side = CURRENT_ACTION.key.endsWith('_l') ? 'l' : 'r';
+
+    // 1. Apply the user's angle to the Hip Flexion (e.g., 0° to 50°)
+    // This ensures the Hip movement is reflected.
+    applyPairAngle(CURRENT_ACTION.key, CURRENT_ACTION.cfg, signed);
+    
+    // 2. OVERRIDE KNEE MOVEMENT: Force the knee back to 90 degrees flexion
+    // This keeps the knee fixed at the starting posture, preventing movement.
+    setPair(`knee_fe_${side}`, -90); // Note: -90 for knee_fe key means 90 degrees of flexion
+
+    log(`Isolated Hip Flexion ${signed}° in Sitting. Knee held at 90°.`);
+    return; // IMPORTANT: Exit the function to prevent the generic path from running.
+}
+ // ----------------------------------------------------------------------
+
+  // === Smooth IR/ER path (compose with Abd/Add from same baseline) ===
+  if (CURRENT_ACTION.key==='sh_irer_l' || CURRENT_ACTION.key==='sh_irer_r'){
+    const side = CURRENT_ACTION.key.endsWith('_l') ? 'l' : 'r';
+
+    // keep elbow flexed for stability
+    setPair(`el_fe_${side}`, 90);
+
+    // RIGHT shoulder needs sign flip on your rig
+    let rotDeg = -signed;
+
+    // compute coupled Abd/Add amount (IR → Add, ER → Abd)
+    const amt = Math.min(30, Math.abs(rotDeg)*0.3) * (rotDeg>0 ? -1 : +1); // − = Add, + = Abd
+
+    // compose both rotations from the SAME base on the SAME bone
+    const keyRot = `sh_irer_${side}`;
+    const keyAA  = `sh_aa_${side}`;
+    const cfgRot = cfgFromKey(keyRot), cfgAA = cfgFromKey(keyAA);
+    const bR = resolveBind(keyRot, cfgRot);
+    const bA = resolveBind(keyAA,  cfgAA);
+    if (bR) bR.axis = 'y'; 
+    if (bR && bA && bR.bone === bA.bone){
+      const base = bR.qBind.clone();
+
+      const toQ = (axis, deg) => {
+        const r = THREE.MathUtils.degToRad(deg);
+        const e = new THREE.Euler(
+          axis==='x'?r:0,
+          axis==='y'?r:0,
+          axis==='z'?r:0,
+          "XYZ"
+        );
+        return new THREE.Quaternion().setFromEuler(e);
+      };
+
+      const qRot = toQ(bR.axis, rotDeg);
+      const qAA  = toQ(bA.axis, amt);
+      const q = base.clone().multiply(qRot).multiply(qAA);
+
+      bR.bone.quaternion.copy(q);
+    } else {
+      // fallback if binds differ: still apply rotation (with R-side fix)
+      applyPairAngle(keyRot, cfgRot, rotDeg);
+    }
+    return; // IMPORTANT: stop here so we don't also run the generic path
+  }
+// === Hip IR/ER path (keep setup posture; rotate thigh around Y) ===
+if (CURRENT_ACTION.key==='hip_irer_l' || CURRENT_ACTION.key==='hip_irer_r'){
+  const side   = CURRENT_ACTION.key.endsWith('_l') ? 'l' : 'r';
+  const keyRot = `hip_irer_${side}`;
+  const cfgRot = cfgFromKey(keyRot);
+
+  // maintain the setup posture every tick
+  setPair(`hip_fe_${side}`, 95);
+  setPair(`knee_fe_${side}`, -90);
+
+  // rotation amount (positive = whatever your menu defines)
+  const rotDeg = CURRENT_ACTION.sign * val;
+
+  // apply rotation about mapped axis (axisFor maps hip_irer_* → 'y')
+  applyPairAngle(keyRot, cfgRot, rotDeg);
+  return; // stop here (don’t run generic path)
+}
+  // === Generic path (everything else) ===
+  applyPairAngle(CURRENT_ACTION.key, CURRENT_ACTION.cfg, signed);
+});
+
+
+    document.getElementById("autoMoveBtn").onclick = () => {
+  // Failsafe: if CURRENT_ACTION got cleared, rebuild it from the dropdown
+  if (!CURRENT_ACTION) {
+    const v = actionSel.value || "";
+    if (v.startsWith("sep:")) {
+      const [, key, signStr, maxStr] = v.split(":");
+      const cfg = cfgFromKey(key);
+      if (cfg) {
+        CURRENT_ACTION = {
+          mode: "sep",
+          key,
+          cfg,
+          sign: parseInt(signStr, 10),
+          max: parseFloat(maxStr),
+          label: actionSel.options[actionSel.selectedIndex]?.textContent || key
+        };
+        syncActionUI(true);
+      }
+    }
+  }
+  // 🔒 Hold seated/90–90 posture at the moment the run starts (Hip IR/ER only)
+  if (/^hip_irer_/.test(CURRENT_ACTION.key)){
+    const side = CURRENT_ACTION.key.endsWith('_l') ? 'l' : 'r';
+    setPair(`hip_fe_${side}`, 95);    // hip flexion stays at 95°
+    setPair(`knee_fe_${side}`, -90);  // knee FLEX stays at −90°
+  }
+
+  let target = CURRENT_ACTION.max;
+  const cap = capFor(CURRENT_ACTION);
+  if (typeof cap === "number") target = cap;
+
+    let current = 0;  
+  actionDeg.value = 0;
+  actionDeg.dispatchEvent(new Event("input"));
+  const step = 1;    // speed: 1 degree per tick
+  const interval = 10; // speed: lower = faster
+
+  const timer = setInterval(() => {
+    current += step;
+
+    if (current >= target) {
+      current = target;
+      clearInterval(timer);
+    }
+
+    actionDeg.value = current;
+    actionDeg.dispatchEvent(new Event("input"));
+
+  }, interval);
+};
+
+    zeroAll.onclick = ()=>{
+    resetAllBonesToInitial();
+    applyAnatomicBaseline();
+    actionSel.value = ""; actionDeg.value = "0"; actionDeg.disabled = true; 
+    rx.value = "0"; ry.value = "0"; rz.value = "0";
+    pairLabel.textContent = "Angle (°)";
+    log("All motions zeroed → returned to anatomic baseline.");
+  };
+
+  /* ===== Model load (unchanged) ===== */
+  function clearModel(){
+    if (model) scene.remove(model);
+    model = null; skeleton = null;
+    initialBoneRot.clear(); JOINT_BIND.clear();
+    boneSel.innerHTML = "";
+    DRUJ.l = DRUJ.r = null;
+  }
+  function loadModel(){
+    msg.textContent = "Loading…"; log("Loading model...");
+    clearModel();
+    loader.load(
+      MODEL_URL,
+      (gltf) => {
+        model = gltf.scene;
+        model.traverse(o => {
+          if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+          if (o.isSkinnedMesh && !skeleton) skeleton = o.skeleton;
+        });
+        scene.add(model);
+        groundSnap();
+        msg.textContent = "✅ Model loaded";
+        populateBones();
+        detectRigProfile();
+        fillActionMenu();
+// 🧩 Fix the right shoulder alignment BEFORE binding baselines
+const shoulderR = findBoneBy({ key: 'upperarm_R' });
+if (shoulderR) {
+  const qFix = new THREE.Quaternion().setFromEuler(
+    new THREE.Euler(THREE.MathUtils.degToRad(30), 0, 0, 'XYZ')
+  );
+  shoulderR.applyQuaternion(qFix);
+  log("Right shoulder alignment fix applied (pre-bind).");
+}
+
+// === Rebuild baselines with corrected orientations ===
+// 1️⃣ Clear and rebuild bind data AFTER shoulder correction
+JOINT_BIND.clear();
+
+// 2️⃣ Re-record each bone’s corrected quaternion as its new baseline
+skeleton.bones.forEach(b => {
+  initialBoneRot.set(b, b.quaternion.clone());
+});
+
+// 3️⃣ Now capture the new baseline for reference motions
+resetAllBonesToInitial();
+
+// 4️⃣ Apply anatomic offsets on top of corrected baseline
+applyAnatomicBaseline();
+
+// ✅ Enable anticollision by default
+COLLIM.enabled = true;
+if (antiBox) antiBox.checked = true;
+
+log("Right-shoulder baseline rebaked.");
+log("Anticollision default ON.");
+log("Anatomic baseline applied on load.");
+ },      
+      (xhr) => { 
+        const pct = xhr.lengthComputable ? Math.min(100, Math.round((xhr.loaded/xhr.total)*100)) : null;
+        msg.textContent = pct !== null ? `Loading ${pct}%` : "Loading…";
+      },
+      (err) => { console.error(err); msg.textContent = "⚠️ Load error"; log(`Error: ${err?.message || err}`); }
+    );
+  }
+  loadModel();
+    
+  /* ===== Advanced controls wiring ===== */
+  boneSel.onchange = ()=>{ rx.value="0"; ry.value="0"; rz.value="0"; setBoneRotationFromUI(); };
+  [rx,ry,rz].forEach(el=> el.addEventListener("input", setBoneRotationFromUI));
+
+  // --- PASTE THIS BLOCK BELOW ---
+  
+  // 1. Model Controller Logic
+  const mdl = { 
+    x: document.getElementById("modelX"),
+    y: document.getElementById("modelY"),
+    z: document.getElementById("modelZ"),
+    s: document.getElementById("modelScale"),
+    yaw: document.getElementById("modelYaw")
+  };
+
+  function updateModelTransform(){
+    if(!model) return;
+    // Apply Position (X, Y, Z)
+    model.position.set(
+      parseFloat(mdl.x.value) || 0,
+      parseFloat(mdl.y.value) || 0,
+      parseFloat(mdl.z.value) || 0
+    );
+    // Apply Scale
+    const s = (parseFloat(mdl.s.value) || 100) / 100;
+    model.scale.set(s, s, s);
+    // Apply Yaw
+    model.rotation.y = THREE.MathUtils.degToRad(parseFloat(mdl.yaw.value) || 0);
+  }
+
+  // 2. Attach Listeners
+  Object.values(mdl).forEach(el => {
+    if(el) el.addEventListener("input", updateModelTransform);
+  });
+
+  // -----------------------------
+  /* ===== Paired-joint helpers ===== */
+  function setPair(key,deg){
+    if (key === 'wr_ps_l') return rotateSideWristPS('l', deg);
+    if (key === 'wr_ps_r') return rotateSideWristPS('r', deg);
+    const cfg = cfgFromKey(key);
+    if (cfg) applyPairAngle(key,cfg,deg);
+  }
+  function getExactBoneByName(name){
+    if (!skeleton) return null;
+    const lname = String(name).toLowerCase();
+    return skeleton.bones.find(b => (b.name||'').toLowerCase() === lname) || null;
+  }
+  function rotateSideWristPS(side, deg){
+    if (!skeleton) return;
+    let wrist = side === 'l' ? getExactBoneByName('hand_l') : getExactBoneByName('hand_r');
+    if (!wrist){
+      wrist = findBoneBy({ side, hints:[/wrist|hand(?!.*thumb|.*index|.*middle|.*ring|.*pinky)/i], key: side==='l'?'wr_ps_l':'wr_ps_r' });
+    }
+    if (!wrist){ log(`No wrist bone for ${side}`); return; }
+    const keyForAxis = side === 'l' ? 'fa_ps_l' : 'fa_ps_r';
+    const axis = axisFor(RIG_PROFILE, keyForAxis, 'y');
+    const qBind = (initialBoneRot.get(wrist) || wrist.quaternion.clone()).clone();
+    const rad = THREE.MathUtils.degToRad(deg);
+    const e = new THREE.Euler(0,0,0,'XYZ');
+    if (axis==='x') e.set(rad,0,0,'XYZ');
+    if (axis==='y') e.set(0,rad,0,'XYZ');
+    if (axis==='z') e.set(0,0,rad,'XYZ');
+    wrist.quaternion.copy(qBind).multiply(new THREE.Quaternion().setFromEuler(e));
+    log(`Wrist ${side.toUpperCase()} (hand_${side}) PS = ${deg}°`);
+  }
+
+/* --- HUD & Helpers --- */ 
+
+function setAngleHUD(angle, romStr=""){
+  const hud = document.getElementById("hud");
+  // Fix: Ensure we display the ROM string if it exists
+  if(hud) hud.textContent = romStr ? `Angle: ${angle.toFixed(0)}° | ROM: ${romStr}` : `Angle: ${angle.toFixed(0)}°`;
+}
+
+function romString(){ 
+  // Fix: Calculate ROM based on the romActive flag
+  return typeof romActive !== 'undefined' && romActive ? `${Gonio.angle.toFixed(0)}° (start 0°)` : ""; 
+}
+
+function setGonioLock(v){
+  lockGonio = v;
+  const inst = document.getElementById('instrument');
+  if(inst) inst.style.pointerEvents = lockGonio ? 'none' : 'auto';
+  const btn = document.getElementById("lockGonio");
+  if(btn) { btn.textContent=(lockGonio?"🔒 Gonio: Locked":"🔓 Gonio: Unlocked"); btn.classList.toggle('lockOn', lockGonio); }
+}
+
+function set3DLock(v){ 
+  lock3D=v; 
+  if(controls) controls.enabled=!lock3D; 
+  const btn = document.getElementById("lock3D");
+  if(btn) { btn.textContent=(lock3D?"🔒 3D: Locked":"🔓 3D: Unlocked"); btn.classList.toggle('lockOn', lock3D); }
+}
+
+// Re-bind UI logic for ROM buttons
+const startB = document.getElementById("startROM"), resetB = document.getElementById("resetROM");
+
+if(startB) startB.onclick=()=>{ 
+    Gonio.zeroHere(); 
+    Gonio.setMovDegRel(0); 
+    
+    romActive=true;         // Turn ON Text
+    Gonio.setRomMode(true); // LOCK BASELINE (Prevents jumping)
+    
+    setAngleHUD(0,""); 
+    log("ROM start @ 0°"); 
+};
+
+if(resetB) resetB.onclick=()=>{ 
+    romActive=false;         // Turn OFF Text
+    Gonio.setRomMode(false); // UNLOCK BASELINE (Allows alignment)
+    
+    Gonio.zeroHere(); 
+    Gonio.setMovDegRel(0); 
+    
+    setAngleHUD(0,""); 
+    log("ROM reset → 0°"); 
+};
+
+// Re-bind UI logic for Locks
+document.getElementById("lock3D").onclick=()=>set3DLock(!lock3D);
+document.getElementById("lockGonio").onclick=()=>setGonioLock(!lockGonio);
+
+/* ===================== GONIOMETER UI CONTROLLERS ===================== */
+
+// 1. Grab Elements
+const sizeEl        = document.getElementById("gonioSize");
+const gonioRotateEl = document.getElementById("gonioRotate");
+const rotateCWEl    = document.getElementById("rotateCW");
+const rotateCCWEl   = document.getElementById("rotateCCW");
+const cwMode        = document.getElementById("cwMode");
+const ccwMode       = document.getElementById("ccwMode");
+const gonioXEl      = document.getElementById("gonioX");
+const gonioYEl      = document.getElementById("gonioY");
+
+// 2. Exclusive Checkboxes (CW vs CCW)
+if(cwMode && ccwMode){
+  cwMode.onchange  = ()=>{ if(cwMode.checked)  ccwMode.checked=false; };
+  ccwMode.onchange = ()=>{ if(ccwMode.checked) cwMode.checked=false; };
+}
+
+// 3. Sliders Logic
+
+// --- HELPER: Update Baseline on Touch ---
+// This ensures that when you grab a slider, the arm's CURRENT position
+// becomes the new "0" for that slider, preventing jumps.
+const handleSliderTouch = () => {
+  // Only update baseline if NOT in ROM mode (Alignment mode)
+  if (typeof romActive !== 'undefined' && !romActive && typeof Gonio !== 'undefined') {
+    Gonio.zeroHere();       // 1. Commit current arm position as new "ZeroRef"
+    
+    // 2. Reset sliders visually to 0 so the new drag calculates relative to HERE
+    if(rotateCWEl)  rotateCWEl.value = 0; 
+    if(rotateCCWEl) rotateCCWEl.value = 0;
+  }
+};
+
+// --- Size ---
+if(sizeEl){
+  sizeEl.oninput = () => { 
+    if(typeof Gonio === 'undefined') return;
+    Gonio.setScale(parseInt(sizeEl.value, 10) / 100); 
+    Gonio.refresh(); 
+  };
+}
+
+// --- Base Rotation ---
+if(gonioRotateEl){
+  gonioRotateEl.oninput = () => { 
+    if(typeof Gonio === 'undefined') return;
+    Gonio.setUserRot(parseFloat(gonioRotateEl.value) || 0); 
+    Gonio.refresh(); 
+  };
+}
+
+// --- Rotate Moving Arm (CW) ---
+if(rotateCWEl){
+  // ADDED: Update baseline immediately when user touches slider
+  rotateCWEl.addEventListener('pointerdown', handleSliderTouch);
+
+  rotateCWEl.oninput = () => {
+    if(typeof Gonio === 'undefined') return;
+    // Auto-check the box if user slides this
+    if(cwMode) { cwMode.checked = true; ccwMode.checked = false; }
+    
+    const v = parseFloat(rotateCWEl.value) || 0;
+    // Reset the other slider
+    if(rotateCCWEl) rotateCCWEl.value = 0;
+
+    Gonio.setMovDegRel(v);
+    
+    // Update HUD
+    if(typeof setAngleHUD === 'function' && typeof romString === 'function') {
+       setAngleHUD(Gonio.getMovDegAbs(), romString());
+    }
+  };
+}
+
+// --- Rotate Moving Arm (CCW) ---
+if(rotateCCWEl){
+  // ADDED: Update baseline immediately when user touches slider
+  rotateCCWEl.addEventListener('pointerdown', handleSliderTouch);
+
+  rotateCCWEl.oninput = () => {
+    if(typeof Gonio === 'undefined') return;
+    // Auto-check the box
+    if(ccwMode) { ccwMode.checked = true; cwMode.checked = false; }
+
+    const v = parseFloat(rotateCCWEl.value) || 0;
+    // Reset the other slider
+    if(rotateCWEl) rotateCWEl.value = 0;
+
+    // Negative value for CCW relative movement
+    Gonio.setMovDegRel(-v);
+
+    // Update HUD
+    if(typeof setAngleHUD === 'function' && typeof romString === 'function') {
+       setAngleHUD(Gonio.getMovDegAbs(), romString());
+    }
+  };
+}
+
+// --- Position X / Y ---
+if(gonioXEl){
+  gonioXEl.oninput = () => { 
+    if(typeof Gonio === 'undefined') return;
+    const y = Gonio.getPan().y; 
+    Gonio.setPan(parseFloat(gonioXEl.value), y); 
+  };
+}
+
+if(gonioYEl){
+  gonioYEl.oninput = () => { 
+    if(typeof Gonio === 'undefined') return;
+    const x = Gonio.getPan().x; 
+    Gonio.setPan(x, parseFloat(gonioYEl.value)); 
+  };
+}
+/* ===== Hidden Anatomic Tuner (dev-only, non-mirrored) ===== */
+let tunerEl = null, tunerVisible = false;
+function ensureAnatomicTuner() {
+  if (tunerEl) return tunerEl;
+  tunerEl = document.createElement('div');
+  Object.assign(tunerEl.style, {
+    position: 'fixed',
+    right: '16px',
+    top: '16px',
+    zIndex: 40,
+    background: 'rgba(8,13,26,.96)',
+    border: '1px solid #334155',
+    borderRadius: '12px',
+    padding: '10px',
+    width: '280px',
+    color: '#e2e8f0',
+    font: '12px/1.3 system-ui,Segoe UI,Roboto',
+    boxShadow: '0 8px 28px rgba(0,0,0,.4)',
+    display: 'none'
+  });
+  tunerEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <strong style="font-size:13px;">Anatomic Position Tuner (dev)</strong>
+      <button id="anatX" title="Close" style="margin-left:auto;background:transparent;border:0;color:#9fb0c9;font-size:16px;cursor:pointer;">✕</button>
+    </div>
+    <label style="display:block;margin-top:6px;opacity:.8">Shoulder ADD (°)</label>
+    <div style="display:grid;grid-template-columns:1fr 50px;gap:6px;">
+      <input id="addL" type="number" step="1">
+      <input id="addR" type="number" step="1" disabled>
+    </div>
+    <label style="display:block;opacity:.8">Forearm PS (°) — sup(+), pro(−)</label>
+    <div style="display:grid;grid-template-columns:1fr 50px;gap:6px;">
+      <input id="psL" type="number" step="1">
+      <input id="psR" type="number" step="1" disabled>
+    </div>
+    <label style="display:block;opacity:.8; margin-top:8px;">Wrist PS (°)</label>
+    <div style="display:grid;grid-template-columns:1fr 50px;gap:6px;">
+      <input id="wpsL" type="number" step="1">
+      <input id="wpsR" type="number" step="1" disabled>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button id="anatApply" class="mini" style="flex:1">Apply</button>
+      <button id="anatZero" class="mini">Zero</button>
+    </div>
+  `;
+  document.body.appendChild(tunerEl);
+
+  // Element references
+  const addL = tunerEl.querySelector('#addL'), addR = tunerEl.querySelector('#addR');
+  const psL  = tunerEl.querySelector('#psL'),  psR  = tunerEl.querySelector('#psR');
+  const wpsL = tunerEl.querySelector('#wpsL'), wpsR = tunerEl.querySelector('#wpsR');
+
+  // Preload current baseline (no mirroring)
+  function preload() {
+    addL.value = String(ANAT.addL);
+    psL.value  = String(ANAT.psL);
+    wpsL.value = String(ANAT.wpsL);
+    addR.value = String(ANAT.addL);
+    psR.value  = String(ANAT.psL);
+    wpsR.value = String(ANAT.wpsL);
+  }
+
+  // Keep right side identical to left (no inversion)
+  function syncRight() {
+    addR.value = String(+addL.value || 0);
+    psR.value  = String(+psL.value  || 0);
+    wpsR.value = String(+wpsL.value || 0);
+  }
+
+  preload();
+  addL.addEventListener('input', syncRight);
+  psL.addEventListener('input', syncRight);
+  wpsL.addEventListener('input', syncRight);
+
+  // Apply & Zero
+  tunerEl.querySelector('#anatApply').onclick = () => {
+    ANAT.addL = +addL.value || 0;
+    ANAT.psL  = +psL.value  || 0;
+    ANAT.wpsL = +wpsL.value || 0;
+    applyAnatomicBaseline();
+  };
+  tunerEl.querySelector('#anatZero').onclick = () => {
+    addL.value = psL.value = wpsL.value = '0';
+    syncRight();
+    ANAT.addL = ANAT.psL = ANAT.wpsL = 0;
+    applyAnatomicBaseline();
+  };
+  tunerEl.querySelector('#anatX').onclick = () => {
+    tunerEl.style.display = 'none';
+    tunerVisible = false;
+  };
+
+  return tunerEl;
+}
+
+function toggleTuner(show) {
+  ensureAnatomicTuner();
+  tunerVisible = (show === undefined) ? !tunerVisible : !!show;
+  tunerEl.style.display = tunerVisible ? 'block' : 'none';
+}
+
+// === Helper: immediately enforce a limit on Apply ===
+function enforceLimit(key, sign, cap) {
+  if (!CURRENT_ACTION || !actionDeg) return;
+  let currentVal = parseFloat(actionDeg.value) || 0;
+  const max = Math.abs(cap);
+  if (sign > 0 && currentVal > max) currentVal = max;
+  if (sign < 0 && currentVal > max) currentVal = max;
+  actionDeg.value = String(max);
+  actionDeg.dispatchEvent(new Event("input"));
+}
+/* ===== Collision Tuner (dev-only) ===== */
+let colTunerEl = null, colTunerVisible = false;
+
+function ensureCollisionTuner() {
+  if (colTunerEl) return colTunerEl;
+  colTunerEl = document.createElement("div");
+  Object.assign(colTunerEl.style, {
+    position: "fixed",
+    right: "16px",
+    top: "120px",
+    zIndex: 41,
+    background: "rgba(8,13,26,.96)",
+    border: "1px solid #334155",
+    borderRadius: "12px",
+    padding: "10px",
+    width: "360px",
+    maxHeight: "80vh",
+    overflowY: "auto",
+    color: "#e2e8f0",
+    font: "12px/1.3 system-ui,Segoe UI,Roboto",
+    boxShadow: "0 8px 28px rgba(0,0,0,.4)",
+    display: "none",
+  });
+
+  colTunerEl.innerHTML = `
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+    <strong style="font-size:13px;">Collision Tuner (dev)</strong>
+    <span class="badge">Safe ROM Line</span>
+    <button id="colX" title="Close"
+      style="margin-left:auto;background:transparent;border:0;color:#9fb0c9;
+             font-size:16px;cursor:pointer;">✕</button>
+  </div>
+
+  <!-- Upper body -->
+  <div class="rom-row"><div class="rom-head">Trunk Lat — Left max (°)</div>
+    <div style="flex:1"><input id="colTrunkLatL" type="number" step="1" min="0" max="90"></div></div>
+  <div class="rom-row"><div class="rom-head">Trunk Lat — Right max (°)</div>
+    <div style="flex:1"><input id="colTrunkLatR" type="number" step="1" min="0" max="90"></div></div>
+  <hr style="border-color:#1c2941;opacity:.3;">
+  <div class="rom-row"><div class="rom-head">Cervical Rot — Left max (°)</div>
+    <div style="flex:1"><input id="cervL" type="number" step="1" min="0" max="90"></div></div>
+  <div class="rom-row"><div class="rom-head">Cervical Rot — Right max (°)</div>
+    <div style="flex:1"><input id="cervR" type="number" step="1" min="0" max="90"></div></div>
+
+  <hr style="border-color:#1c2941;opacity:.3;margin:8px 0;">
+
+  <!-- === Fixed Shoulder Section === -->
+  <div class="rom-row"><div class="rom-head">Shoulder Ext — Left max (°)</div>
+    <div style="flex:1"><input id="shExtL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Shoulder Ext — Right max (°)</div>
+    <div style="flex:1"><input id="shExtR" type="number"></div></div>
+
+  <div class="rom-row"><div class="rom-head">Shoulder Add — Left max (°)</div>
+    <div style="flex:1"><input id="shAddL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Shoulder Add — Right max (°)</div>
+    <div style="flex:1"><input id="shAddR" type="number"></div></div>
+
+  <div class="rom-row"><div class="rom-head">Shoulder Abd — Left max (°)</div>
+    <div style="flex:1"><input id="shAbdL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Shoulder Abd — Right max (°)</div>
+    <div style="flex:1"><input id="shAbdR" type="number"></div></div>
+
+  <div class="rom-row"><div class="rom-head">Shoulder Flex — Left max (°)</div>
+    <div style="flex:1"><input id="shFlexL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Shoulder Flex — Right max (°)</div>
+    <div style="flex:1"><input id="shFlexR" type="number"></div></div>
+
+  <div class="rom-row"><div class="rom-head">Shoulder IR — Left max (°)</div>
+    <div style="flex:1"><input id="shIRL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Shoulder IR — Right max (°)</div>
+    <div style="flex:1"><input id="shIRR" type="number"></div></div>
+
+  <div class="rom-row"><div class="rom-head">Shoulder ER — Left max (°)</div>
+    <div style="flex:1"><input id="shERL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Shoulder ER — Right max (°)</div>
+    <div style="flex:1"><input id="shERR" type="number"></div></div>
+
+  <hr style="border-color:#1c2941;opacity:.3;margin:8px 0;">
+
+  <div class="rom-row"><div class="rom-head">Elbow Ext — Left max (°)</div>
+    <div style="flex:1"><input id="elExtL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Elbow Ext — Right max (°)</div>
+    <div style="flex:1"><input id="elExtR" type="number"></div></div>
+
+    <div class="rom-row"><div class="rom-head">Elbow Flex — Left max (°)</div>
+  <div style="flex:1"><input id="elFlexL" type="number"></div></div>
+<div class="rom-row"><div class="rom-head">Elbow Flex — Right max (°)</div>
+  <div style="flex:1"><input id="elFlexR" type="number"></div></div>
+
+  <div class="rom-row"><div class="rom-head">Wrist Sup — Left max (°)</div>
+    <div style="flex:1"><input id="wrSupL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Wrist Sup — Right max (°)</div>
+    <div style="flex:1"><input id="wrSupR" type="number"></div></div>
+
+  <hr style="border-color:#1c2941;opacity:.3;margin:8px 0;">
+  <div class="rom-row"><div class="rom-head">Hip Flex — Left max (°)</div>
+    <div style="flex:1"><input id="hipFlexL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Hip Flex — Right max (°)</div>
+    <div style="flex:1"><input id="hipFlexR" type="number"></div></div>
+
+  <div class="rom-row"><div class="rom-head">Knee Flex — Left max (°)</div>
+    <div style="flex:1"><input id="kneeFlexL" type="number"></div></div>
+  <div class="rom-row"><div class="rom-head">Knee Flex — Right max (°)</div>
+    <div style="flex:1"><input id="kneeFlexR" type="number"></div></div>
+
+  <div style="display:flex;gap:8px;margin-top:10px;">
+    <button id="colApply" class="mini" style="flex:1">Apply</button>
+    <button id="colSave" class="mini">Save</button>
+    <button id="colReset" class="mini">Reset</button>
+  </div>
+  <div style="opacity:.7;margin-top:6px;">
+    Tip: with <em>Anticollision</em> ON, these caps are enforced.
+    Shift+Click the checkbox to reopen this tuner.
+  </div>`;
+
+  document.body.appendChild(colTunerEl);
+  const $ = (id) => colTunerEl.querySelector(id);
+
+  // === Apply Button ===
+  colTunerEl.querySelector("#colApply").onclick = () => {
+    const assign = (prop, id) => { COLLIM[prop] = +$(id).value || COLLIM[prop]; };
+    assign("trunkLatLMax", "#colTrunkLatL");
+    assign("trunkLatRMax", "#colTrunkLatR");
+    assign("cervRotLMax", "#cervL");
+    assign("cervRotRMax", "#cervR");
+    assign("shAddLMax", "#shAddL");
+    assign("shAddRMax", "#shAddR");
+    assign("shAbdLMax", "#shAbdL");
+    assign("shAbdRMax", "#shAbdR");
+    assign("shFlexLMax", "#shFlexL");
+    assign("shFlexRMax", "#shFlexR");
+    assign("shExtLMax", "#shExtL");
+    assign("shExtRMax", "#shExtR");
+    assign("elFlexLMax", "#elFlexL");
+    assign("elFlexRMax", "#elFlexR");
+    assign("wrSupLMax", "#wrSupL");
+    assign("wrSupRMax", "#wrSupR");
+    assign("hipFlexLMax", "#hipFlexL");
+    assign("hipFlexRMax", "#hipFlexR");
+    COLLIM.save(); COLLIM.enabled = true;
+    log("✅ limits  applied.");
+  };
+
+  // === Preload Existing Values ===
+  const preload = () => {
+    $("#colTrunkLatL").value = COLLIM.trunkLatLMax;
+    $("#colTrunkLatR").value = COLLIM.trunkLatRMax;
+    $("#cervL").value = COLLIM.cervRotLMax;
+    $("#cervR").value = COLLIM.cervRotRMax;
+    $("#shAddL").value = COLLIM.shAddLMax;
+    $("#shAddR").value = COLLIM.shAddRMax;
+    $("#shAbdL").value = COLLIM.shAbdLMax;
+    $("#shAbdR").value = COLLIM.shAbdRMax;
+    $("#shFlexL").value = COLLIM.shFlexLMax;
+    $("#shFlexR").value = COLLIM.shFlexRMax;
+    $("#elFlexL").value = COLLIM.elFlexLMax;
+    $("#elFlexR").value = COLLIM.elFlexRMax;
+    $("#wrSupL").value = COLLIM.wrSupLMax;
+    $("#wrSupR").value = COLLIM.wrSupRMax;
+    $("#hipFlexL").value = COLLIM.hipFlexLMax;
+    $("#hipFlexR").value = COLLIM.hipFlexRMax;
+  };
+  preload();
+
+  colTunerEl.querySelector("#colX").onclick = () => toggleCollisionTuner(false);
+  return colTunerEl;
+}
+
+function toggleCollisionTuner(show) {
+  ensureCollisionTuner();
+  COLLIM.load();
+  colTunerVisible = show === undefined ? !colTunerVisible : !!show;
+  colTunerEl.style.display = colTunerVisible ? "block" : "none";
+}
+
+function pickOnScreen(e){
+  if(!target) return;
+  const leftPanel = document.querySelector('.panel');
+  if(leftPanel && leftPanel.contains(e.target)) return;
+
+  const r = renderer.domElement.getBoundingClientRect();
+  const x = Math.min(Math.max(e.clientX - r.left, 0), r.width);
+  const y = Math.min(Math.max(e.clientY - r.top, 0), r.height);
+
+  scr[target] = { x, y };
+  console.log(`${target} pinned @ ${x|0},${y|0}`); ///added after
+
+  //const host = document.getElementById('gonioHost');
+  //host.classList.remove('hide'); host.setAttribute('aria-hidden','false');
+ // log(`${target} pinned @ ${x|0},${y|0}`); //see is replaces above
+  target = null;
+  refreshScreenDots();
+}
+
+renderer.domElement.addEventListener('pointerdown', pickOnScreen, {passive:false});
+svg.addEventListener('pointerdown', pickOnScreen, {passive:false});
+
+/* Pills */
+document.getElementById("pickFulcrum").onclick   = () => { target = "fulcrum";   log("Place Fulcrum");   };
+document.getElementById("pickStationary").onclick= () => { target = "stationary";log("Place Stationary"); };
+document.getElementById("pickMoving").onclick    = () => { target = "moving";    log("Place Moving");    };
+
+/* Reset Measurement */
+const resetMeasurementBtn = document.getElementById("resetMeasurement");
+resetMeasurementBtn.onclick = ()=>{
+  // 1. Clear dots
+  scr.fulcrum = scr.stationary = scr.moving = null;
+  refreshScreenDots();
+   
+  // 2. Hide Gonio, Unlock Mode, Reset Variables
+  if(typeof Gonio !== 'undefined') {
+      Gonio.hide();
+      Gonio.setRomMode(false); // <--- UNLOCK MODE HERE
+  }
+  romActive = false;
+
+  // 3. Reset Sliders
+  if(rotateCWEl) rotateCWEl.value = 0;
+  if(rotateCCWEl) rotateCCWEl.value = 0;
+   
+  // 4. Reset HUD
+  setAngleHUD(0,"");
+  log("Measurement reset");
+};
+    
+/* Render loop */
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight; 
+  camera.updateProjectionMatrix(); 
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const clock = new THREE.Clock();
+    
+(function animate(){
+  clock.getDelta();
+  controls.update();
+  
+  // Update HUD if Gonio is visible
+  const host = document.getElementById('gonioHost');
+  if (host && !host.classList.contains('hide')) {
+     if(typeof Gonio !== 'undefined' && typeof setAngleHUD === 'function'){
+        
+        // 1. Get the raw 0-360 position of the arm
+        const raw = Gonio.getMovDegAbs();
+        
+        // 2. VISUAL ONLY: Fold at 180. 
+        // If raw is 270°, this makes it read 90° (360 - 270).
+        const visualAngle = (raw > 180) ? 360 - raw : raw;
+
+        // 3. Update HUD
+        // visualAngle = Position on tool (0-180)
+        // romString() = Total travel (0-360)
+        setAngleHUD(visualAngle, typeof romString === 'function' ? romString() : "");
+     }
+  }
+
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+})();
+    
+  </script>
+  <div id="notePopup" 
+     style="display:none; position:fixed; right:16px; bottom:16px;
+            width:min(420px,50vw); max-height:70vh;
+            background:#0c1628; color:#e2e8f0;
+            border:1px solid #334155; border-radius:10px;
+            padding:12px; overflow:auto; z-index:200;">
+  <div style="display:flex; align-items:center;">
+    <strong style="font-size:14px;">Goniometer Placement</strong>
+    <button id="closeNote" 
+            style="margin-left:auto; background:transparent; border:0;
+                   color:#9fb0c9; font-size:18px; cursor:pointer;">✕</button>
+  </div>
+  <div id="noteContent" style="margin-top:10px; font-size:13px; line-height:1.45;"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+  <div id="notePopup" 
+     style="display:none; position:fixed; right:16px; bottom:16px;
+            width:min(420px,50vw); max-height:70vh;
+            background:#0c1628; color:#e2e8f0;
+            border:1px solid #334155; border-radius:10px;
+            padding:12px; overflow:auto; z-index:200;">
+    <div style="display:flex; align-items:center;">
+      <strong style="font-size:14px;">Goniometer Placement</strong>
+      <button id="closeNote" 
+              style="margin-left:auto; background:transparent; border:0;
+                     color:#9fb0c9; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div id="noteContent" style="margin-top:10px; font-size:13px; line-height:1.45;"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+  <script>
+
+  GONIO_CASE_TOKENS = {
+  // Case 1 — Cervical impairment (existing)
+  "GONIO-CERVICAL-001": {
+    caseId: "case_001",
+    label: "Cervical ROM Case",
+    allowedRegions: ["cervical"],
+    // Impairments for this case: max measured angles
+    impairments: {
+      // 1. RIGHT Lateral Flexion (SEVERE LIMIT)
+      cervical_right_lat_flex: { max: 20 }, // Impaired side (20°)
+
+      // 2. LEFT Lateral Flexion (Full ROM/Unaffected)
+      cervical_left_lat_flex: { max: 45 },  // Full ROM limit (45°)
+
+      // 3. RIGHT Rotation (MODERATE LIMIT)
+      cervical_right_rotation: { max: 30 }, // Impaired side (30°)
+
+      // 4. LEFT Rotation (Full ROM/Unaffected)
+      cervical_left_rotation: { max: 70 },  // Full ROM limit (70°)
+
+      // Required default for motions not explicitly listed
+      default_unrestricted: { max: 99.0 }
+    }
+  },
+
+  // Case 2 — Hip impairment (your Maria J. case)
+  "GONIO-HIP-002": {
+    caseId: "case_002",
+    label: "Hip ROM Case – R Flex 50° / Ext 5° / Abd 20°",
+    allowedRegions: ["hip"],
+    // Goniometry-specific limits for this case
+    impairments: {
+      // 1. RIGHT Hip Flexion
+      hip_right_flexion:  { max: 50 }, // 50° vs 120° normal
+
+      // 2. RIGHT Hip Extension
+      hip_right_extension:{ max: 5 },  // 5° vs 15° normal
+
+      // 3. RIGHT Hip Abduction
+      hip_right_abduction:{ max: 20 }, // 20° vs 45° normal
+
+      // Everything else stays normal unless you add it later
+      default_unrestricted: { max: 99.0 }
+    }
+  },
+
+  // Case 3 — Cluster impairment 
+"GONIO-CLUSTER-003": {
+  caseId: "case_003",
+  label: "Cluster Impairment",
+  allowedRegions: ["thoracic_lumbar_spine"],
+  impairments: {
+    // Lumbar/Trunk Flexion & Extension
+    trunk_flexion:        { max: 20 }, // Flexion 20°
+    trunk_extension:      { max: 10  }, // Extension 10°
+    hip_right_abduction: { max: 20 },
+    trunk_lat:           { max: 15 },
+    trunk_rot:           { max: 20 }
+  }
+}
+
+
+  // You can keep stacking more cases here later:
+  // "GONIO-XXXX-003": { caseId:"case_003", label:"...", allowedRegions:["..."], impairments:{ ... } }
+};
+  
+
+  // Small helper: read a query parameter from the URL.
+  function getQueryParam(name){
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }
+
+  // Global case mode state for the Goniometry Trainer.
+  // When inactive, everything behaves normally.
+  window.GONIO_CASE_MODE = {
+    active: false,
+    token: null,
+    caseId: null,
+    label: null,
+    allowedRegions: [],
+    impairments: {}
+  };
+
+  // Helper for the simulation side: build a URL with caseToken.
+  window.buildGoniometryCaseUrl = function(baseUrl, caseToken){
+    const u = new URL(baseUrl, window.location.origin);
+    u.searchParams.set("caseToken", caseToken);
+    return u.toString();
+  };
+
+  // Angle clamping helper
+  window.clampAngleForCase = function(rawAngleDeg, impairmentKey){
+    if (!window.GONIO_CASE_MODE.active) return rawAngleDeg;
+    const lim = window.GONIO_CASE_MODE.impairments[impairmentKey];
+    if (!lim || typeof lim.max !== "number") return rawAngleDeg;
+    return Math.min(rawAngleDeg, lim.max);
+  };
+
+// Initialize case mode (runs once on load)
+(function initGoniometryCaseMode(){
+  const token = getQueryParam("caseToken");
+  const cfg   = token && GONIO_CASE_TOKENS[token];
+  if (!cfg) return; // no (valid) case token → normal behavior
+
+  // Populate global case mode
+  window.GONIO_CASE_MODE.active         = true;
+  window.GONIO_CASE_MODE.token          = token;
+  window.GONIO_CASE_MODE.caseId         = cfg.caseId;
+  window.GONIO_CASE_MODE.label          = cfg.label;
+  window.GONIO_CASE_MODE.allowedRegions = cfg.allowedRegions.slice();
+  window.GONIO_CASE_MODE.impairments    = Object.assign({}, cfg.impairments);
+
+  // === 1) Case banner at BOTTOM ===
+  const banner = document.createElement("div");
+  banner.id = "goniometry-case-banner";
+  let bannerText = `Case Mode: ${cfg.label} — token ${token}`;
+
+// Case 2 — Hip
+if (cfg.caseId === "case_002"){
+  bannerText = "Case 2 – Hip Impairment: ...";
+}
+
+// Case 3 — Cluster Treatment
+if (cfg.caseId === "case_003"){
+  bannerText = "Case 3 – Cluster Impairment";
+}
+
+
+banner.textContent = bannerText;
+  banner.style.position = "fixed";
+  banner.style.left = "0";
+  banner.style.right = "0";
+  banner.style.bottom = "0";
+  banner.style.zIndex = "9999";
+  banner.style.padding = "8px 12px";
+  banner.style.fontSize = "13px";
+  banner.style.fontWeight = "600";
+  banner.style.textAlign = "center";
+  banner.style.background = "#0f172a";
+  banner.style.color = "#facc15";
+  banner.style.boxShadow = "0 -2px 6px rgba(0,0,0,0.4)";
+  document.body.appendChild(banner);
+
+  // === 2) BODY REGION + ACTIONS: driven by case region ===
+  function lockBodyRegionAndActionsForCase(){
+    const mode    = window.GONIO_CASE_MODE || {};
+    const allowed = mode.allowedRegions || [];
+    const regionKey = allowed[0]; // e.g. "cervical", "hip"
+    if (!regionKey) return;
+
+   const regionSel = document.getElementById("regionSel");
+const actionSel = document.getElementById("actionSel");
+
+// wait until REGION dropdown exists and has options
+if (!regionSel || !regionSel.options || !regionSel.options.length){
+  requestAnimationFrame(lockBodyRegionAndActionsForCase);
+  return;
+}
+
+    // Map case region → region label + word to search for in actions
+    const regionKeyToLabel = {
+      cervical: "Cervical Spine",
+      hip:      "Hip",
+      thoracic_lumbar_spine: "Thoracic & Lumbar Spine"
+      
+      // later: knee:"Knee", ankle:"Ankle", etc.
+    };
+
+    const regionKeyToWord = {
+      cervical: "cervical",
+      hip:      "hip",
+      thoracic_lumbar_spine: "trunk" 
+      // later: knee:"knee", ankle:"ankle", etc. to match your action text
+    };
+
+    const targetLabel = regionKeyToLabel[regionKey];
+    const matchWord   = (regionKeyToWord[regionKey] || "").toLowerCase();
+    if (!targetLabel || !matchWord) return;
+
+    // 2a) LOCK BODY REGION
+    let hasTarget = false;
+    Array.from(regionSel.options).forEach(opt => {
+      const label = (opt.textContent || "").trim();
+      if (label === targetLabel) hasTarget = true;
+    });
+
+    if (!hasTarget){
+      // region list not fully populated yet
+      requestAnimationFrame(lockBodyRegionAndActionsForCase);
+      return;
+    }
+
+    // Remove every region that does NOT match targetLabel
+    Array.from(regionSel.options).forEach(opt => {
+      const label = (opt.textContent || "").trim();
+      if (label !== targetLabel){
+        opt.remove();
+      }
+    });
+
+    regionSel.selectedIndex = 0;
+    regionSel.dispatchEvent(new Event("change", { bubbles:true }));
+    regionSel.disabled = true;
+        // if actions not ready yet, wait and then do the action filter
+    if (!actionSel || !actionSel.options || !actionSel.options.length){
+      requestAnimationFrame(lockBodyRegionAndActionsForCase);
+      return;
+    }
+
+    // 2b) ACTIONS: keep all motions whose label CONTAINS the region word
+
+
+    // 2b) ACTIONS: keep all motions whose label CONTAINS the region word
+    Array.from(actionSel.options).forEach(opt => {
+      const label = (opt.textContent || "").trim().toLowerCase();
+      if (!label) return;
+
+      // keep placeholder like "(Select a motion…)" if you have it
+      if (label.includes("select a motion")) return;
+
+      // remove anything that does NOT mention the region word
+      if (!label.includes(matchWord)){
+        opt.remove();
+      }
+    });
+
+    // auto-select first real action if placeholder isn't first
+    if (actionSel.options.length){
+      const firstLabel =
+        (actionSel.options[0].textContent || "").toLowerCase();
+      if (!firstLabel.includes("select a motion")){
+        actionSel.selectedIndex = 0;
+        actionSel.dispatchEvent(new Event("change", { bubbles:true }));
+      }
+    }
+  }
+
+  lockBodyRegionAndActionsForCase();
+
+})();
+
+
+  </script>
+</body>
+</html>
+
