@@ -2197,11 +2197,12 @@ $enter.addEventListener('click', async () => {
         // 2. Show Review Button and Open in New Tab
         if (reviewBtn) {
             reviewBtn.style.display = 'block';
-            reviewBtn.onclick = () => {
-                const targetURL = `../MCQ/?module=${modId}`;
-                // Opens in a new browser tab/window
-                window.open(targetURL, '_blank');
-            };
+          reviewBtn.onclick = () => {
+    const modId = document.getElementById('moduleSelect')?.value || "FL-001";
+    const targetURL = `../MCQ/?module=${modId}`;
+    window.open(targetURL, '_blank');
+};
+
         }
     } else {
         if (reviewBtn) reviewBtn.style.display = 'none';
