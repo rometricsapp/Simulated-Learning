@@ -1433,30 +1433,32 @@ function updateHUD() {
         $status.style.color = "#cfe3ff";
     }
 }    
+const clock = new THREE.Clock();
+let lastT = 0;
 
-    const clock = new THREE.Clock();
-let lastT = clock.getElapsedTime();
 // --- GLOBAL RESTORE FUNCTION ---
-// This resets the avatar bones to their original positions.
 const restore = () => {
-    const R = animate._run;
-    if (R && R.rig) {
-        for (const [b, q] of R.rig.base) b.quaternion.copy(q);
-    }
+  const R = animate._run;
+  if (R && R.rig) {
+    for (const [b, q] of R.rig.base) b.quaternion.copy(q);
+  }
 };
-let last = 0;
-function animate(t) {
-  if (t - last < 16) return; // cap ~60fps, skip extra frames
-  last = t;
+
+function animate() {
   requestAnimationFrame(animate);
 
+  const now = clock.getElapsedTime();
+  const dt = now - lastT;
+  lastT = now;
 
-    const now = clock.getElapsedTime();
-    let dt = now - lastT;
-    lastT = now;
+  // guard against huge dt spikes (tab switch, lag)
+  if (dt > 0.1) return;
 
-    controls.update();
-  
+  if (controls) controls.update();
+
+  // rest of your animation / render logic stays below
+}
+
 // ===== BLINK (works for BOTH Roma + Roman via auto-detect morph names) =====
 if (!animate._blink) animate._blink = { model:null, targets:[], state:0, t:0, next:0 };
 
